@@ -1,0 +1,22 @@
+services:
+  ros:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pobs-ros2-lyrical:latest
+    working_dir: /home/ros/ros2_ws
+    volumes:
+      - ./ros2_ws:/home/ros/ros2_ws:rw
+      - colcon-build:/home/ros/ros2_ws/build
+      - colcon-install:/home/ros/ros2_ws/install
+      - colcon-log:/home/ros/ros2_ws/log
+      - ros-home:/home/ros
+    stdin_open: true
+    tty: true
+    command: bash
+
+volumes:
+  colcon-build:
+  colcon-install:
+  colcon-log:
+  ros-home:

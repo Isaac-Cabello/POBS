@@ -1,0 +1,12 @@
+services:
+  ros:
+    environment:
+      DISPLAY: ":0"
+      WAYLAND_DISPLAY: "${WAYLAND_DISPLAY}"
+      XDG_RUNTIME_DIR: "/mnt/wslg/runtime-dir"
+      PULSE_SERVER: "/mnt/wslg/PulseServer"
+      QT_QPA_PLATFORM: "xcb"
+      LIBGL_ALWAYS_SOFTWARE: "1"
+    volumes:
+      - /mnt/wslg/.X11-unix:/tmp/.X11-unix:rw
+      - /mnt/wslg:/mnt/wslg:rw
