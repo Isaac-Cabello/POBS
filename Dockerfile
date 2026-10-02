@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-lyrical-rosidl-typesupport-fastrtps-c \
     ros-lyrical-rosidl-typesupport-fastrtps-cpp \
     sudo \
+    gosu \
     && apt-get dist-upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
@@ -35,7 +36,10 @@ RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /home/ros/.bashrc \
     && echo '[ -f ~/ros2_ws/install/setup.bash ] && source ~/ros2_ws/install/setup.bash' \
         >> /home/ros/.bashrc
 
-USER ros
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 WORKDIR /home/ros/ros2_ws
 
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bash"]

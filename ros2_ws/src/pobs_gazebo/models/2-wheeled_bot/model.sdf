@@ -33,6 +33,13 @@
           <diffuse>0.10 0.35 0.85 1</diffuse>
         </material>
       </visual>
+
+      <sensor name="imu" type="imu">
+        <always_on>true</always_on>
+        <update_rate>100</update_rate>
+        <visualize>false</visualize>
+        <topic>/model/2-wheeled_bot/imu</topic>
+      </sensor>
     </link>
 
     <link name="left_wheel">
@@ -81,8 +88,9 @@
     <joint name="left_wheel_joint" type="revolute">
       <parent>base_link</parent>
       <child>left_wheel</child>
+
       <axis>
-        <xyz>0 1 0</xyz>
+        <xyz expressed_in="__model__">0 1 0</xyz>
         <limit>
           <lower>-1e16</lower>
           <upper>1e16</upper>
@@ -138,8 +146,9 @@
     <joint name="right_wheel_joint" type="revolute">
       <parent>base_link</parent>
       <child>right_wheel</child>
+
       <axis>
-        <xyz>0 1 0</xyz>
+        <xyz expressed_in="__model__">0 1 0</xyz>
         <limit>
           <lower>-1e16</lower>
           <upper>1e16</upper>
@@ -207,6 +216,11 @@
       <odom_topic>odom</odom_topic>
       <frame_id>odom</frame_id>
       <child_frame_id>base_link</child_frame_id>
+    </plugin>
+
+    <plugin
+      filename="gz-sim-imu-system"
+      name="gz::sim::systems::Imu">
     </plugin>
 
   </model>

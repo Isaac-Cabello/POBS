@@ -1,0 +1,100 @@
+import math
+
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+
+
+class DriveXm(Node):
+    def __init__(self):
+        super().__init__('drive_xm')
+
+        self.declare_parameter('distance_m', 5.0)
+        self.declare_parameter('speed_m_s', 0.20)
+        self.declare_parameter('distance_tolerance_m', 0.03)
+
+        self.target_distance = abs(float(
+            self.get_parameter('distance_m').value
+        ))
+        self.speed = abs(float(
+            self.get_parameter('speed_m_s').value
+        ))
+        self.tolerance = abs(float(
+            self.get_parameter('distance_tolerance_m').value
+        ))
+
+        self.start_x = None
+        self.finished = False
+
+        self.odom_sub = self.create_subscription(
+            Odometry,
+            '/twowheel/odom_estimate',
+            self.odom_callback,
+            10,
+        )
+
+        self.command_pub = self.create_publisher(
+            Twist,
+            '/twowheel/cmd_request',
+            10,
+        )
+
+        self.timer = self.create_timer(0.1, self.control_loop)
+
+        self.get_logger().info(
+            f'Waiting for odometry, then driving '
+            f'{self.target_distance:.2f} m at {self.speed:.2f} m/s'
+        )
+
+    def odom_callback(self, msg: Odometry) -> None:
+        if self.start_x is None:
+            self.start_x = msg.pose.pose.position.x
+            self.get_logger().info(
+                f'Start position recorded: x={self.start_x:.3f} m'
+            )
+
+        self.current_x = msg.pose.pose.position.x
+
+    def control_loop(self) -> None:
+        command = Twist()
+
+        if self.finished:
+            self.command_pub.publish(command)
+            return
+
+        if self.start_x is None:
+            return
+
+        traveled = abs(self.current_x - self.start_x)
+        remaining = self.target_distance - traveled
+
+        if remaining <= self.tolerance:
+            self.finished = True
+            self.command_pub.publish(command)
+            self.get_logger().info(
+                f'Finished. Estimated distance: {traveled:.3f} m'
+            )
+            return
+
+        command.linear.x = self.speed
+        command.angular.z = 0.0
+        self.command_pub.publish(command)
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = DriveXm()
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.command_pub.publish(Twist())
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
