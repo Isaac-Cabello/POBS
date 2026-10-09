@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sdf version="1.10">
+  <model name="lake_terrain">
+    <static>true</static>
+    <link name="terrain">
+      <collision name="terrain_collision">
+        <geometry>
+          <mesh>
+            <uri>model://lake_terrain/meshes/terrain.obj</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="terrain_visual">
+        <geometry>
+          <mesh>
+            <uri>model://lake_terrain/meshes/terrain.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.32 0.38 0.20 1</ambient>
+          <diffuse>0.32 0.38 0.20 1</diffuse>
+        </material>
+      </visual>
+      <visual name="water_surface">
+        <geometry>
+          <mesh>
+            <uri>model://lake_terrain/meshes/water.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.04 0.28 0.42 1</ambient>
+          <diffuse>0.04 0.28 0.42 1</diffuse>
+        </material>
+        <transparency>0.55</transparency>
+        <cast_shadows>false</cast_shadows>
+      </visual>
+    </link>
+  </model>
+</sdf>
