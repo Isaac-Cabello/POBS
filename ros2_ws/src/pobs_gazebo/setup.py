@@ -12,6 +12,7 @@ setup(
         ('share/pobs_gazebo', ['package.xml']),
 	('share/pobs_gazebo/launch', ['launch/simulation.launch.py']),
 	('share/pobs_gazebo/worlds', ['worlds/empty.sdf']),
+    ('share/pobs_gazebo/worlds', ['worlds/underwater.sdf']),
     ],
     package_data={'': ['py.typed']},
     install_requires=['setuptools'],

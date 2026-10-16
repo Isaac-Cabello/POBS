@@ -12,7 +12,7 @@ def generate_launch_description():
     world = os.path.join(
         pobs_gazebo_share,
         "worlds",
-        "empty.sdf",
+        "underwater.sdf",
     )
 
     return LaunchDescription([
