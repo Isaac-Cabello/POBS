@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-vcstool \
     ros-lyrical-turtlesim \
     ros-lyrical-rqt-common-plugins \
+    ros-lyrical-rviz2 \
     ros-lyrical-ros-gz \
     ros-lyrical-ros-gz-sim \
     ros-lyrical-simulation-interfaces \

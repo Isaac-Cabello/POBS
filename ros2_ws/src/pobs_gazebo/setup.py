@@ -9,8 +9,18 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/pobs_gazebo']),
-        ('share/pobs_gazebo', ['package.xml']),
-	('share/pobs_gazebo/launch', ['launch/simulation.launch.py']),
+        ('share/pobs_gazebo', ['package.xml', 'VISUALIZATION.md']),
+        ('share/pobs_gazebo/launch', [
+            'launch/simulation.launch.py',
+            'launch/trajectory_comparison.launch.py',
+        ]),
+        ('share/pobs_gazebo/rviz', ['rviz/trajectory_comparison.rviz']),
+        ('share/pobs_gazebo/models/lake_terrain',
+            ['models/lake_terrain/model.sdf', 'models/lake_terrain/model.config']),
+        ('share/pobs_gazebo/models/lake_terrain/meshes', [
+            'models/lake_terrain/meshes/terrain.obj',
+            'models/lake_terrain/meshes/water.obj',
+        ]),
 	('share/pobs_gazebo/worlds', ['worlds/empty.sdf']),
     ],
     package_data={'': ['py.typed']},
@@ -27,6 +37,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'trajectory_comparison = '
+            'pobs_gazebo.trajectory_comparison:main',
         ],
     },
 )

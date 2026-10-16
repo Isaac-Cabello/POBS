@@ -38,6 +38,7 @@ trap 'exit 143' TERM
 echo "Starting POBS sensor and pose bridges..."
 
 ros2 run ros_gz_bridge parameter_bridge \
+  '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock' \
   '/pobs/imu@sensor_msgs/msg/Imu[gz.msgs.IMU' \
   '/pobs/sonar@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan' \
   '/model/pobs/pose@geometry_msgs/msg/PoseStamped[gz.msgs.Pose' &
@@ -49,6 +50,7 @@ python3 "$DEPTH_SCRIPT" &
 DEPTH_PID=$!
 
 echo "POBS topics:"
+echo "  /clock"
 echo "  /pobs/imu"
 echo "  /pobs/sonar"
 echo "  /model/pobs/pose"

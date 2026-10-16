@@ -1,0 +1,102 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Name: root
+  Enabled: true
+  Global Options:
+    Background Color: 35; 38; 45
+    Fixed Frame: lake
+    Frame Rate: 30
+  Displays:
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Lake Terrain and Water
+      Enabled: true
+      Topic:
+        Value: /visualization/lake
+        Depth: 1
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+      Namespaces:
+        terrain: true
+        water: true
+    - Class: rviz_default_plugins/Grid
+      Name: Lake Grid
+      Enabled: false
+      Reference Frame: <Fixed Frame>
+      Cell Size: 1
+      Plane Cell Count: 60
+      Color: 110; 115; 125
+      Alpha: 0.4
+      Plane: XY
+    - Class: rviz_default_plugins/Pose
+      Name: Actual Robot Pose (green arrow)
+      Enabled: true
+      Topic:
+        Value: /model/pobs/pose
+        Depth: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+      Shape: Arrow
+      Color: 60; 220; 120
+      Alpha: 1
+      Shaft Length: 1
+      Shaft Radius: 0.1
+      Head Length: 0.4
+      Head Radius: 0.2
+    - Class: rviz_default_plugins/Path
+      Name: Ground Truth Path (green)
+      Enabled: true
+      Topic:
+        Value: /visualization/ground_truth_path
+        Depth: 1
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+      Color: 60; 220; 120
+      Alpha: 1
+      Buffer Length: 1
+      Line Style: Billboards
+      Line Width: 0.06
+      Pose Style: None
+    - Class: rviz_default_plugins/Path
+      Name: Estimated Path (orange)
+      Enabled: true
+      Topic:
+        Value: /visualization/estimated_path
+        Depth: 1
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+      Color: 255; 150; 50
+      Alpha: 1
+      Buffer Length: 1
+      Line Style: Billboards
+      Line Width: 0.04
+      Pose Style: None
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Name: Lake Overview
+      Target Frame: <Fixed Frame>
+      Distance: 140
+      Pitch: 0.9
+      Yaw: 0.8
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: -3
+  Value: true
+Window Geometry:
+  Width: 1200
+  Height: 800
