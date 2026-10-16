@@ -22,7 +22,7 @@ class ImuFilter(Node):
 
         self.subscription = self.create_subscription(
             Imu,
-            '/model/2-wheeled_bot/imu',
+            '/pobs/imu',
             self.imu_callback,
             50,
         )
@@ -34,7 +34,7 @@ class ImuFilter(Node):
         )
 
         self.get_logger().info(
-            'Listening to /model/2-wheeled_bot/imu '
+            'Listening to /pobs/imu '
             'and publishing /pobs/imu_filtered'
         )
 

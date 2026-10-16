@@ -22,6 +22,7 @@ setup(
             'models/lake_terrain/meshes/water.obj',
         ]),
 	('share/pobs_gazebo/worlds', ['worlds/empty.sdf']),
+    ('share/pobs_gazebo/worlds', ['worlds/underwater.sdf']),
     ],
     package_data={'': ['py.typed']},
     install_requires=['setuptools'],

@@ -4,6 +4,7 @@ import time
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Quaternion
 from std_msgs.msg import Float64MultiArray
 
 
@@ -38,7 +39,7 @@ class DeadReckoning(Node):
 
         self.subscription = self.create_subscription(
             Float64MultiArray,
-            '/twowheel/imu_filtered',
+            '/pobs/imu_filtered',
             self.imu_callback,
             50,
         )
@@ -55,7 +56,7 @@ class DeadReckoning(Node):
         )
 
         self.get_logger().info(
-            'Dead reckoning started: /twowheel/imu_filtered '
+            'Dead reckoning started: /pobs/imu_filtered '
             '-> /twowheel/odom_estimate'
         )
 
@@ -142,7 +143,7 @@ class DeadReckoning(Node):
         odom.twist.twist.angular.y = 0.0
         odom.twist.twist.angular.z = self.latest_yaw_rate
 
-        self.odom_publisher.publish(odom)
+        self.publisher.publish(odom)
 
 def main(args=None):
     rclpy.init(args=args)

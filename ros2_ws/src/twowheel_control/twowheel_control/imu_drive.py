@@ -34,14 +34,14 @@ class ImuDrive(Node):
 
         self.publisher = self.create_publisher(
             Twist,
-            '/model/2-wheeled_bot/cmd_vel',
+            '/cmd_vel',
             10,
         )
 
         self.timer = self.create_timer(0.1, self.control_loop)
 
         self.get_logger().info(
-            'Publishing control commands to /model/2-wheeled_bot/cmd_vel'
+            'Publishing control commands to /cmd_vel'
         )
 
     def imu_callback(self, msg: Float64MultiArray) -> None:
