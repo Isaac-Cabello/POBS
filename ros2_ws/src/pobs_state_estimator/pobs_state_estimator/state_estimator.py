@@ -88,7 +88,7 @@ class StateEstimator(Node):
         q = msg.orientation
         norm = math.sqrt(q.x**2 +q.y**2 + q.z**2 + q.w**2)
         if norm < 1e-8 or msg.orientation_covariance[0] ==-1:
-            self.get_logger().warn('IMU orientation unavailable  ')
+            self.get_logger().warning('IMU orientation unavailable  ')
             return
         self.orientation=(q.x/norm, q.y/norm, q.z/norm, q.w/norm )
         accel_body = (msg.linear_acceleration.x,
@@ -109,38 +109,33 @@ class StateEstimator(Node):
 )
         self.angular_velocity=(msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z,)
         self.last_imu_stamp = msg.header.stamp
-        stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
-        if self.last_imu_stamp is None:
-            self.last_integration_stamp = stamp
-            return
-        self.last_imu_stamp = msg.header.stamp
-        stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        stamp = (
+            msg.header.stamp.sec
+            + msg.header.stamp.nanosec * 1e-9
+        )
         if stamp <= 0.0:
             return
         if self.last_integration_stamp is None:
             self.last_integration_stamp = stamp
             return
         dt = stamp - self.last_integration_stamp
-        if dt <= 0.0:
-            # Simulation may have restarted
+        if dt == 0.0: # duplicate imu timstamp
+            return
+        if dt < 0.0: # sim clock moved backward - reset integration state
             self.last_integration_stamp = stamp
             self.velocity_x = 0.0
             self.velocity_y = 0.0
-            self.position_x = 0.0
-            self.position_y = 0.0
+            self.position_x=0.0
+            self.position_y=0.0
             return
+
         self.last_integration_stamp = stamp
-        if dt > 0.1:
-            # Avoid integrating across large sensor gaps
-            self.velocity_x = 0.0
-            self.velocity_y = 0.0
-            return
 
         #gravity compensated h acc
         ax = self.world_acceleration[0]
         ay = self.world_acceleration[1]
         # Ignore small acceleration fluctuations caused by sensor noise
-        accel_deadband = 0.05  # m/s^2
+        accel_deadband = 0.01  # m/s^2
         if abs(ax) < accel_deadband:
             ax = 0.0
         if abs(ay) < accel_deadband:
