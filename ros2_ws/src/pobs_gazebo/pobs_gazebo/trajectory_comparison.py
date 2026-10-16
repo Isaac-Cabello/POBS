@@ -1,9 +1,13 @@
+from copy import deepcopy
+import math
+
 import rclpy
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TransformStamped
 from nav_msgs.msg import Odometry, Path
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from rosgraph_msgs.msg import Clock
+from tf2_ros import StaticTransformBroadcaster
 from visualization_msgs.msg import Marker, MarkerArray
 
 
@@ -17,13 +21,38 @@ class TrajectoryComparison(Node):
         self.latest_estimated = None
         self.latest_truth = None
         self.match_tolerance_ns = 50_000_000  # 50 milliseconds; tune as needed.
+        self.declare_parameter('reset_settle_s', 0.25)
+        reset_settle_s = float(self.get_parameter('reset_settle_s').value)
+        if not math.isfinite(reset_settle_s) or reset_settle_s < 0:
+            raise ValueError('reset_settle_s must be finite and nonnegative')
+        self.reset_settle_ns = round(reset_settle_s * 1_000_000_000)
+        self.reset_ready_ns = None
 
         self.max_path_points = 2000
+        # The current estimator uses world-aligned axes and absolute depth,
+        # but starts its horizontal position at zero. Match lake.sdf's spawn
+        # x/y; z stays zero because the estimator already reports -depth.
+        self.declare_parameter('publish_odom_transform', True)
+        self.declare_parameter('odom_offset_x', -12.0)
+        self.declare_parameter('odom_offset_y', -8.0)
+        self.odom_offset_x = float(self.get_parameter('odom_offset_x').value)
+        self.odom_offset_y = float(self.get_parameter('odom_offset_y').value)
+        if self.get_parameter('publish_odom_transform').value:
+            self.odom_transform_broadcaster = StaticTransformBroadcaster(self)
+            transform = TransformStamped()
+            transform.header.frame_id = 'lake'
+            transform.child_frame_id = 'odom'
+            transform.transform.translation.x = self.odom_offset_x
+            transform.transform.translation.y = self.odom_offset_y
+            transform.transform.rotation.w = 1.0
+            self.odom_transform_broadcaster.sendTransform(transform)
         self.last_estimated_stamp_ns = None
         self.last_truth_stamp_ns = None
         self.last_clock_ns = None
         self.estimated_path = Path()
         self.ground_truth_path = Path()
+        self.estimated_path.header.frame_id = 'lake'
+        self.ground_truth_path.header.frame_id = 'lake'
         path_qos = QoSProfile(
             depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
 
@@ -62,7 +91,7 @@ class TrajectoryComparison(Node):
         self.lake_markers = self.make_lake_markers()
         self.publish_lake()
         # Refresh after RViz clears its scene on a simulation-time reset.
-        self.lake_timer = self.create_timer(2.0, self.publish_lake)
+        self.lake_timer = self.create_timer(10.0, self.publish_lake)
 
     @staticmethod
     def make_lake_markers() -> MarkerArray:
@@ -104,10 +133,24 @@ class TrajectoryComparison(Node):
         stamp_ns = self.stamp_to_ns(msg.clock)
         if self.last_clock_ns is not None and stamp_ns < self.last_clock_ns:
             self.reset_comparison()
+            # The unchanged estimator can initially stamp its cached old depth
+            # with the new simulation time. Allow the sensor pipeline to settle.
+            self.reset_ready_ns = stamp_ns + self.reset_settle_ns
         self.last_clock_ns = stamp_ns
+
+    def accept_after_reset(self, stamp_ns: int) -> bool:
+        """Skip reset transients and queued messages from the previous run."""
+        if self.reset_ready_ns is None:
+            return True
+        if self.last_clock_ns is None or self.last_clock_ns < self.reset_ready_ns:
+            return False
+        return (self.reset_ready_ns <= stamp_ns
+                <= self.last_clock_ns + self.match_tolerance_ns)
 
     def estimated_odometry_callback(self, msg: Odometry) -> None:
         stamp_ns = self.stamp_to_ns(msg.header.stamp)
+        if not self.accept_after_reset(stamp_ns):
+            return
         if (self.last_estimated_stamp_ns is not None
                 and stamp_ns < self.last_estimated_stamp_ns):
             self.reset_comparison()
@@ -118,6 +161,8 @@ class TrajectoryComparison(Node):
 
     def ground_truth_odometry_callback(self, msg: PoseStamped) -> None:
         stamp_ns = self.stamp_to_ns(msg.header.stamp)
+        if not self.accept_after_reset(stamp_ns):
+            return
         if (self.last_truth_stamp_ns is not None
                 and stamp_ns < self.last_truth_stamp_ns):
             self.reset_comparison()
@@ -144,12 +189,29 @@ class TrajectoryComparison(Node):
         self.compare_pair(estimated, truth)
 
     def compare_pair(self, estimated: Odometry, ground_truth: PoseStamped) -> None:
-        # Assumption until frame alignment is confirmed: both inputs share
-        # the same world origin, axes, and units.
-        estimated_pose = estimated.pose.pose
+        """Convert the estimate to lake before publishing either trail."""
+        if ground_truth.header.frame_id != 'lake':
+            self.get_logger().warn(
+                'Ground-truth pose must use the lake frame',
+                throttle_duration_sec=2.0)
+            return
+        estimated_pose = PoseStamped(
+            header=deepcopy(estimated.header),
+            pose=deepcopy(estimated.pose.pose))
+        if estimated.header.frame_id == 'odom':
+            # Apply the same configured translation as lake -> odom here.
+            # RViz then needs no odom lookup while its TF buffer resets.
+            estimated_pose.pose.position.x += self.odom_offset_x
+            estimated_pose.pose.position.y += self.odom_offset_y
+            estimated_pose.header.frame_id = 'lake'
+        elif estimated.header.frame_id != 'lake':
+            self.get_logger().warn(
+                f'Unsupported estimated frame: {estimated.header.frame_id!r}',
+                throttle_duration_sec=2.0)
+            return
 
-        self.estimated_path.header = estimated.header
-        self.ground_truth_path.header = ground_truth.header
+        self.estimated_path.header = deepcopy(estimated_pose.header)
+        self.ground_truth_path.header = deepcopy(ground_truth.header)
 
         if len(self.estimated_path.poses) >= self.max_path_points:
             self.estimated_path.poses.pop(0)
@@ -157,9 +219,8 @@ class TrajectoryComparison(Node):
         if len(self.ground_truth_path.poses) >= self.max_path_points:
             self.ground_truth_path.poses.pop(0)
 
-        self.estimated_path.poses.append(
-            PoseStamped(header=estimated.header, pose=estimated_pose))
-        self.ground_truth_path.poses.append(ground_truth)
+        self.estimated_path.poses.append(estimated_pose)
+        self.ground_truth_path.poses.append(deepcopy(ground_truth))
 
         self.publish_paths()
 
@@ -180,6 +241,7 @@ class TrajectoryComparison(Node):
         self.last_estimated_stamp_ns = None
         self.last_truth_stamp_ns = None
         self.last_clock_ns = None
+        self.reset_ready_ns = None
         self.estimated_path.poses.clear()
         self.ground_truth_path.poses.clear()
         stamp = self.get_clock().now().to_msg()

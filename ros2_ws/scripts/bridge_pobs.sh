@@ -54,7 +54,7 @@ echo "  /clock"
 echo "  /pobs/imu"
 echo "  /pobs/sonar"
 echo "  /model/pobs/pose"
-echo "  /pobs/depth"
+echo "  /pobs/depth (PointStamped: positive depth in point.z)"
 echo "  /pobs/pressure"
 echo
 echo "Leave this terminal open. Press Ctrl+C to stop both processes."

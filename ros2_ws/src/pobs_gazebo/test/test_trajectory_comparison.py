@@ -72,6 +72,28 @@ def test_unmatched_samples_wait(node):
     assert len(node.estimated_path.poses) == 1
 
 
+def test_world_paths_after_reset_without_rviz_tf_lookup(node):
+    """Output trails stay in lake across reset without altering input poses."""
+    estimate, truth = samples(10)
+    estimate.header.frame_id = 'odom'
+    original = deepcopy(estimate)
+    node.compare_pair(estimate, truth)
+    assert node.estimated_path.header.frame_id == 'lake'
+    assert node.estimated_path.poses[-1].header.frame_id == 'lake'
+    assert node.estimated_path.poses[-1].pose.position.x == -2.0
+    assert node.estimated_path.poses[-1].pose.position.y == -8.0
+    node.reset_comparison()
+    assert node.estimated_path.header.frame_id == 'lake'
+    assert node.ground_truth_path.header.frame_id == 'lake'
+    assert estimate == original
+    estimate, truth = samples(1)
+    estimate.header.frame_id = 'odom'
+    node.compare_pair(estimate, truth)
+    assert node.estimated_path.poses[-1].header.frame_id == 'lake'
+    assert node.estimated_path.poses[-1].pose.position.x == -11.0
+    assert len(node.estimated_path.poses) == 1
+
+
 def test_clock_reset_clears_history_and_pending_samples(node):
     """A backward clock jump clears history and permits a fresh run."""
     add_pair(node, 10)
@@ -85,8 +107,48 @@ def test_clock_reset_clears_history_and_pending_samples(node):
     assert not node.estimated_path.poses
     assert not node.ground_truth_path.poses
     assert node.latest_estimated is node.latest_truth is None
+    clock.clock.sec = 1
+    node.clock_callback(clock)
     add_pair(node, 1)
     assert [pose.header.stamp.sec for pose in node.estimated_path.poses] == [1]
+
+
+def test_cached_old_depth_does_not_recreate_a_trail_after_reset(node):
+    """Ignore old depth with new timestamps and queued previous-run data."""
+    add_pair(node, 10)
+    clock = Clock()
+    clock.clock.sec = 10
+    node.clock_callback(clock)
+    clock.clock.sec = 0
+    node.clock_callback(clock)
+    clock.clock.nanosec = 50_000_000
+    node.clock_callback(clock)
+    estimate, truth = samples(0)
+    estimate.header.stamp.nanosec = 33_000_000
+    estimate.pose.pose.position.z = -9.19
+    truth.header.stamp.nanosec = 50_000_000
+    truth.pose.position.z = -3.0
+    node.estimated_odometry_callback(estimate)
+    node.ground_truth_odometry_callback(truth)
+    assert not node.estimated_path.poses
+    assert not node.ground_truth_path.poses
+
+    clock.clock.nanosec = 300_000_000
+    node.clock_callback(clock)
+    estimate.header.stamp.nanosec = 300_000_000
+    estimate.pose.pose.position.z = -3.2
+    truth.header.stamp.nanosec = 300_000_000
+    truth.pose.position.z = -3.2
+    node.estimated_odometry_callback(estimate)
+    node.ground_truth_odometry_callback(truth)
+    assert len(node.estimated_path.poses) == 1
+    assert node.estimated_path.poses[0].pose.position.z == -3.2
+
+    old_estimate, old_truth = samples(10)
+    node.estimated_odometry_callback(old_estimate)
+    node.ground_truth_odometry_callback(old_truth)
+    assert len(node.estimated_path.poses) == 1
+    assert node.latest_estimated is node.latest_truth is None
 
 
 @pytest.mark.parametrize('stream', ['estimate', 'truth'])
