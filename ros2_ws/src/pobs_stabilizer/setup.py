@@ -25,6 +25,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'stabilizer = pobs_stabilizer.stabilizer:main',
         ],
     },
 )
