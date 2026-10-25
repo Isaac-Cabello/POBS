@@ -26,6 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'stabilizer = pobs_stabilizer.stabilizer:main',
+            'thruster_allocator = pobs_stabilizer.thruster_allocator:main',
         ],
     },
 )
