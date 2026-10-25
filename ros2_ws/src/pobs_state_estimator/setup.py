@@ -24,8 +24,9 @@ setup(
         ],
     },
     entry_points={
-        'console_scripts': [
+    'console_scripts': [
         'state_estimator = pobs_state_estimator.state_estimator:main',
-        ],
-    },
+        'mock_depth_publisher = pobs_state_estimator.mock_depth_publisher:main',
+    ],
+},
 )
