@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-colcon-common-extensions \
     python3-rosdep \
     python3-vcstool \
+    python3-serial \
+    python3-smbus \
     ros-lyrical-turtlesim \
     ros-lyrical-rqt-common-plugins \
     ros-lyrical-rviz2 \

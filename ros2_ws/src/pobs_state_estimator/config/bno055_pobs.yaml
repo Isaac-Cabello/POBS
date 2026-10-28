@@ -1,0 +1,30 @@
+bno055:
+  ros__parameters:
+    # ROS topic configuration
+    ros_topic_prefix: "pobs/"
+    frame_id: "pobs_imu"
+
+    # Sensor communication (future hardware)
+    connection_type: "uart"
+    uart_port: "/dev/ttyUSB0"
+    uart_baudrate: 115200
+    uart_timeout: 0.1
+
+    # Data collection
+    data_query_frequency: 50
+    calib_status_frequency: 1.0
+
+    # NDOF: accelerometer + gyroscope + magnetometer
+    operation_mode: 12
+
+    # Sensor orientation
+    placement_axis_remap: "P1"
+
+    # Scaling factors
+    acc_factor: 100.0
+    mag_factor: 16000000.0
+    gyr_factor: 900.0
+    grav_factor: 100.0
+
+    # Calibration
+    set_offsets: false

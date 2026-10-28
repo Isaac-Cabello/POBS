@@ -2,7 +2,7 @@ import math
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
-from geometry_msgs.msg import PointStamped # swap to pointStamp befor push
+from geometry_msgs.msg import PointStamped
 from nav_msgs.msg import Odometry
 
 def rotate_vector_by_quaternion(v, q):
@@ -34,6 +34,9 @@ class StateEstimator(Node):
         self.declare_parameter('imu_topic', '/pobs/imu')
 
         self.imu_topic = self.get_parameter('imu_topic').value
+
+        self.declare_parameter('imu_acceleration_includes_gravity', True)
+        self.imu_acceleration_includes_gravity = bool(self.get_parameter('imu_acceleration_includes_gravity').value)
 
         self.declare_parameter('depth_topic','/pobs/depth')
         self.declare_parameter('max_depth_dt_s',0.5)
@@ -95,10 +98,11 @@ class StateEstimator(Node):
                         msg.linear_acceleration.y,
                         msg.linear_acceleration.z,)
         accel_world = rotate_vector_by_quaternion(accel_body,self.orientation)
+        gravity_z = (9.81 if self.imu_acceleration_includes_gravity else 0.0)
         self.world_acceleration = (
             accel_world[0],
             accel_world[1],
-            accel_world[2] - 9.81,
+            accel_world[2] - gravity_z,
         )
         self.get_logger().info(
             f'Gravity-compensated accel: '
