@@ -1,7 +1,0 @@
-# Python runtime dependencies for POBS (including sonar, mapping and allocation).
-# ROS 2, ROS messages, Gazebo and device access are installed separately.
-# See RASPBERRY_PI.md. Use the system Python associated with your ROS install.
-numpy>=1.26
-scipy>=1.11
-pyserial>=3.5
-PyYAML>=6.0
