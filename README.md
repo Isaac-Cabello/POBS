@@ -11,8 +11,93 @@ The project runs ROS 2 and Gazebo in a Docker container based on Ubuntu 26.04. T
 - Turtlesim for ROS 2 onboarding
 - Gazebo Jetty for simulation
 - `pobs_gazebo`, the project Gazebo package
+- `pobs_sonar`, four UART SEN0599 sensor instances; see
+  [driver setup and topics](ros2_ws/src/pobs_sonar/README.md)
+- `pobs_mapping`, accumulated sonar points projected with timestamped Gazebo
+  ground truth and sensor transforms read from `model.sdf`
+- `pobs_visualization`, selectable `state_estimation` and `point_cloud_mapping`
+  RViz display groups
 - `2-wheeled_bot`, a simple two-wheeled differential-drive robot
 - Windows + WSLg GUI support through `compose.gui-wslg.yaml`
+
+The lake includes repeatable seabed roughness, mounds, a trench, three boulders,
+and a forward sonar test wall. See [terrain controls and reload commands](
+ros2_ws/src/pobs_gazebo/TERRAIN.md). The test-area spawn is 2.5 m above the bottom
+so all four sonar beams can produce returns at the initial pose.
+
+The host launcher in `scripts/pobs` runs Docker commands for you. From the
+repository root in Ubuntu WSL, install or update it with:
+
+```bash
+install -Dm755 scripts/pobs ~/.local/bin/pobs
+```
+
+Ensure `~/.local/bin` is on your PATH. The launcher defaults to the repository at
+`/mnt/c/Users/kotha/pobs`; set `POBS_REPO` for another checkout and
+`POBS_CONTAINER` for another container name (default `pobs-lake`).
+`pobs sensors` starts the four sonars and existing sensor bridges and
+depth/pressure publisher. The host command defaults to simulation and detects
+an already-running legacy bridge. Use `source:=hardware` for UART sensors.
+See the driver documentation for serial ports and mount poses.
+
+## Accumulated sonar map in RViz
+
+Run these commands on the Ubuntu WSL host. Restart an older simulator once to
+load the new sensor mounts; `pobs stop` ends its current simulation:
+
+```bash
+pobs stop
+pobs sim --headless
+pobs build
+pobs sensors source:=simulation
+```
+
+Keep the sensor command running. In another Ubuntu WSL host terminal:
+
+```bash
+pobs rviz point_cloud_mapping
+pobs rviz state_estimation point_cloud_mapping
+```
+
+The `pobs rvis` spelling is also accepted. Tags select the initially enabled
+RViz groups; both groups remain available in Displays. Selecting state estimation
+starts the estimator and restores the green ground-truth and orange estimated
+trails. Use `start_estimator:=false` with an external estimator; the host launcher
+also detects the standard estimator executable. `pobs compare` selects the
+state-estimation view. See [compatibility notes](COMPATIBILITY.md) for behavior
+retained from earlier development.
+
+The mapper uses `/model/pobs/pose` exclusively, never the estimator. Every
+accepted sonar hit is kept for the current run and published in the full
+`/pobs/mapping/points` cloud. Reopening RViz receives the current complete map.
+Simulation resets or the clear service empty it; no old map points expire.
+See [mapper details](ros2_ws/src/pobs_mapping/README.md) and
+[visualization options](ros2_ws/src/pobs_visualization/README.md).
+
+To restart a run without closing Gazebo, the sensors, or RViz, use the existing
+host command:
+
+```bash
+pobs reset
+# Or reset and leave the simulation paused:
+pobs reset --paused
+```
+
+This resets the world and simulation time in place, preserving the buoyancy
+metadata that Gazebo otherwise loses on reset. The mapper clears its old points
+when the clock rewinds. It does not reload edited SDF files; use `pobs stop`
+followed by `pobs sim` when model or world geometry has changed.
+
+The simple robot remains the default. `pobs sim --cad` selects the optional local
+CAD chassis; `--headless` can be combined with it. The ignored local
+`models/pobs_cad/meshes/Chassis.STL` must be present. After changing robot physics,
+sonar mounts or the lake spawn, run `python3 ~/ros2_ws/scripts/sync_robot_variants.py`
+inside the container to regenerate the matching CAD model and world.
+
+After changing the host launcher, repeat the installation command above. It
+routes sensor and RViz commands through Docker to `ros2_ws/scripts/pobs` in the
+mounted checkout. Start only one mapper at a time; toggle the RViz groups
+within that view instead of launching a second map collector.
 
 ## Important: host ROS installations
 

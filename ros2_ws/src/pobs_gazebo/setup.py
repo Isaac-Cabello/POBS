@@ -1,6 +1,16 @@
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
 package_name = 'pobs_gazebo'
+model_files = []
+for model in ('pobs', 'pobs_cad', 'lake_terrain', 'sonar_targets', '2-wheeled_bot'):
+    for directory in (Path('models') / model).rglob('*'):
+        if directory.is_file() and directory.suffix not in ('.bak',):
+            model_files.append((
+                'share/' + package_name + '/' + str(directory.parent),
+                [str(directory)],
+            ))
 
 setup(
     name=package_name,
@@ -9,11 +19,13 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/pobs_gazebo']),
-        ('share/pobs_gazebo', ['package.xml']),
-	('share/pobs_gazebo/launch', ['launch/simulation.launch.py']),
-	('share/pobs_gazebo/worlds', ['worlds/empty.sdf']),
-    ('share/pobs_gazebo/worlds', ['worlds/underwater.sdf']),
-    ],
+        ('share/pobs_gazebo', ['package.xml', 'TERRAIN.md']),
+        ('share/pobs_gazebo/launch', ['launch/simulation.launch.py',
+                                    'launch/trajectory_comparison.launch.py']),
+        ('share/pobs_gazebo/rviz', ['rviz/trajectory_comparison.rviz']),
+        ('share/pobs_gazebo/worlds', ['worlds/empty.sdf', 'worlds/lake.sdf',
+                                    'worlds/lake_cad.sdf']),
+    ] + model_files,
     package_data={'': ['py.typed']},
     install_requires=['setuptools'],
     zip_safe=True,
@@ -28,6 +40,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'trajectory_comparison = pobs_gazebo.trajectory_comparison:main',
         ],
     },
 )

@@ -6,14 +6,14 @@
       <collision name="terrain_collision">
         <geometry>
           <mesh>
-            <uri>model://lake_terrain/meshes/terrain.obj</uri>
+            <uri>model://lake_terrain/meshes/terrain_bumpy.obj</uri>
           </mesh>
         </geometry>
       </collision>
       <visual name="terrain_visual">
         <geometry>
           <mesh>
-            <uri>model://lake_terrain/meshes/terrain.obj</uri>
+            <uri>model://lake_terrain/meshes/terrain_bumpy.obj</uri>
           </mesh>
         </geometry>
         <material>

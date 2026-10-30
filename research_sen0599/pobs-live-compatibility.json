@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "message_counts": {
+    "truth_path": 26,
+    "estimated_path": 26,
+    "cloud": 18,
+    "tf": 8,
+    "clock": 1408,
+    "terrain": 3,
+    "imu": 150,
+    "pose": 32,
+    "odom": 34,
+    "depth": 32,
+    "pressure": 32,
+    "depth_sonar": 16,
+    "objects": 3,
+    "left": 12,
+    "right": 12,
+    "middle": 5
+  },
+  "reset_cleared": [
+    "cloud",
+    "estimated_path",
+    "truth_path"
+  ],
+  "clock_rewound": true,
+  "buoyant_links_preserved": 6,
+  "truth_trail_points": 20,
+  "estimated_trail_points": 20,
+  "accumulated_sonar_points": 42,
+  "rviz_objects": 4,
+  "latest_ranges": {
+    "left": 4.685693740844727,
+    "right": 4.688931465148926,
+    "middle": 4.702994346618652,
+    "depth_sonar": 5.634234428405762
+  }
+}

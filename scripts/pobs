@@ -1,0 +1,306 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo="${POBS_REPO:-/mnt/c/Users/kotha/pobs}"
+# Keep existing named volumes when changing the source checkout.
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-pobs-ros2}"
+container="${POBS_CONTAINER:-pobs-lake}"
+world=/home/ros/ros2_ws/src/pobs_gazebo/worlds/lake.sdf
+models=/home/ros/ros2_ws/src/pobs_gazebo/models
+ros_setup='source /opt/ros/lyrical/setup.bash'
+workspace_setup='source /home/ros/ros2_ws/install/setup.bash'
+
+usage() {
+    cat <<'EOF'
+Usage: pobs COMMAND
+
+  sim                 Start the lake simulator with WSLg GUI
+  sim --headless      Start only the Gazebo server
+  sim --cad           Use the optional local CAD chassis (also accepts --headless)
+  gui                 Alias for pobs sim
+  bridge              Bridge sensors and publish depth/pressure (foreground)
+  sensors [ARGS]      Start all four sonars and existing sensors (simulation default)
+  shell               Open a ROS/Gazebo shell in the simulator
+  rviz [TAGS] [ARGS]   Open selected state_estimation / point_cloud_mapping displays
+  rvis                Alias for pobs rviz
+  compare             Run the estimator, path comparison, and configured RViz
+  build               Install dependencies and build workspace packages in the simulator
+  status              Show simulator and bridge status
+  topics              List ROS topics
+  imu|sonar|pose|depth|pressure [--watch]
+                      Show one message, or stream messages with --watch
+  sonar [left|right|middle|depth] [--watch]
+                      Inspect a named sonar (defaults to downward)
+  run PACKAGE EXEC [ARGS]
+                      Run a ROS executable in the simulator
+  reset [--paused]    Reset Gazebo in place and restore buoyancy
+  stop                Stop and remove the simulator container
+EOF
+    echo
+    echo 'Examples:'
+    echo '  pobs sim --headless'
+    echo '  pobs build'
+    echo '  pobs sensors source:=simulation'
+    echo '  pobs rviz point_cloud_mapping'
+    echo '  pobs rviz state_estimation point_cloud_mapping start_estimator:=true'
+}
+
+need_docker() {
+    if ! docker info >/dev/null 2>&1; then
+        echo 'Docker Desktop is unavailable. Start it and enable Ubuntu WSL integration.' >&2
+        exit 1
+    fi
+}
+
+sim_running() {
+    [[ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null || true)" == true ]]
+}
+
+need_sim() {
+    need_docker
+    if ! sim_running; then
+        echo 'Lake simulator is stopped. Start it with: pobs sim' >&2
+        exit 1
+    fi
+}
+
+exec_in_sim() {
+    local terminal=(-i)
+    if [[ -t 0 && -t 1 ]]; then
+        terminal=(-it)
+    fi
+    docker exec "${terminal[@]}" -u ros -e HOME=/home/ros "$container" bash -lc "$1"
+}
+
+exec_args_in_sim() {
+    local terminal=(-i)
+    if [[ -t 0 && -t 1 ]]; then
+        terminal=(-it)
+    fi
+    # Keep caller arguments separate; never interpolate ROS arguments into shell code.
+    docker exec "${terminal[@]}" -u ros -e HOME=/home/ros "$container" bash -lc \
+        'source /opt/ros/lyrical/setup.bash && source /home/ros/ros2_ws/install/setup.bash && exec "$@"' \
+        pobs "$@"
+}
+
+start_sim() {
+    local mode="$1"
+    local variant="${2:-simple}"
+    if [[ "$variant" == cad ]]; then
+        if [[ ! -f "$repo/ros2_ws/src/pobs_gazebo/models/pobs_cad/meshes/Chassis.STL" ]]; then
+            echo 'CAD requires models/pobs_cad/meshes/Chassis.STL. Use pobs sim for the simple model.' >&2
+            exit 1
+        fi
+        world=/home/ros/ros2_ws/src/pobs_gazebo/worlds/lake_cad.sdf
+    fi
+    need_docker
+    if sim_running; then
+        echo 'Lake simulator is already running.'
+        return
+    fi
+    if docker container inspect "$container" >/dev/null 2>&1; then
+        docker rm "$container" >/dev/null
+    fi
+    cd "$repo"
+    # Headless Gazebo still allows RViz windows in the same container.
+    export DISPLAY="${DISPLAY:-:0}"
+    local compose=(-f compose.yaml -f compose.gui-wslg.yaml)
+    local server_flag='-s --headless-rendering'
+    if [[ "$mode" == gui ]]; then
+        server_flag=
+    fi
+    docker compose "${compose[@]}" run -d --name "$container" ros bash -lc \
+        "$ros_setup && export GZ_SIM_RESOURCE_PATH=$models && exec gz sim $server_flag -r $world" >/dev/null
+    echo "Lake simulator started ($mode). Next: pobs build, then pobs sensors"
+}
+
+case "${1:-help}" in
+    sim)
+        shift
+        mode=gui
+        variant=simple
+        for arg in "$@"; do
+            case "$arg" in
+                --headless) mode=headless ;;
+                --cad) variant=cad ;;
+                *) echo 'Usage: pobs sim [--headless] [--cad]' >&2; exit 2 ;;
+            esac
+        done
+        start_sim "$mode" "$variant"
+        ;;
+    gui)
+        start_sim gui
+        ;;
+    bridge)
+        need_sim
+        if docker exec "$container" pgrep -f '[/]ros_gz_bridge/parameter_bridge.*[/]pobs/imu' >/dev/null 2>&1; then
+            echo 'POBS sensor bridge is already running.'
+            exit 0
+        fi
+        echo 'Starting sensor bridge and depth/pressure publisher. Press Ctrl+C to stop.'
+        exec_in_sim 'exec bash /home/ros/ros2_ws/scripts/bridge_pobs.sh'
+        ;;
+    sensors)
+        need_sim
+        shift
+        if docker exec "$container" pgrep -f \
+            '[/]pobs_sonar/(simulated_sonars|sen0599_driver)' >/dev/null 2>&1; then
+            echo 'Sonar sensor publishers are already running. Use pobs topics or pobs sonar --watch.'
+            exit 0
+        fi
+        sensor_args=("$@")
+        has_source=false
+        has_existing=false
+        for arg in "${sensor_args[@]}"; do
+            case "$arg" in
+                source:=*) has_source=true ;;
+                existing_sensors:=*) has_existing=true ;;
+            esac
+        done
+        if [[ "$has_source" == false ]]; then
+            sensor_args+=(source:=simulation)
+        fi
+        if [[ "$has_existing" == false ]] && docker exec "$container" pgrep -f \
+            '[/]ros_gz_bridge/parameter_bridge.*[/]pobs/imu' >/dev/null 2>&1; then
+            sensor_args+=(existing_sensors:=false)
+        fi
+        exec_args_in_sim bash /home/ros/ros2_ws/scripts/pobs sensors "${sensor_args[@]}"
+        ;;
+    shell)
+        need_sim
+        exec docker exec -it -u ros -e HOME=/home/ros "$container" bash -lc \
+            "$ros_setup && $workspace_setup && exec bash -i"
+        ;;
+    rviz|rvis)
+        need_sim
+        shift
+        rviz_args=("$@")
+        has_estimator=false
+        for arg in "${rviz_args[@]}"; do
+            [[ "$arg" == start_estimator:=* ]] && has_estimator=true
+        done
+        if [[ "$has_estimator" == false ]] && docker exec "$container" pgrep -f \
+            '[/]pobs_state_estimator/state_estimator' >/dev/null 2>&1; then
+            rviz_args+=(start_estimator:=false)
+        fi
+        exec_args_in_sim bash /home/ros/ros2_ws/scripts/pobs rviz "${rviz_args[@]}"
+        ;;
+    compare)
+        need_sim
+        shift
+        exec bash "$0" rviz state_estimation "$@"
+        ;;
+    build)
+        need_sim
+        exec_in_sim "$ros_setup && cd /home/ros/ros2_ws && sudo apt-get update && rosdep install --from-paths src --ignore-src -r -y && colcon build --symlink-install"
+        ;;
+    status)
+        need_docker
+        if ! sim_running; then
+            echo 'Lake simulator: stopped'
+            exit 0
+        fi
+        echo 'Lake simulator: running'
+        if docker exec "$container" pgrep -f '[/]ros_gz_bridge/parameter_bridge.*[/]pobs/imu' >/dev/null 2>&1; then
+            echo 'Sensor bridge: running'
+        else
+            echo 'Sensor bridge: stopped'
+        fi
+        if docker exec "$container" pgrep -f '[/]pobs_depth_sensor.py' >/dev/null 2>&1; then
+            echo 'Depth/pressure publisher: running'
+        else
+            echo 'Depth/pressure publisher: stopped'
+        fi
+        if docker exec "$container" pgrep -f \
+            '[/]pobs_sonar/(simulated_sonars|sen0599_driver)' >/dev/null 2>&1; then
+            echo 'Sonar publishers: running'
+        else
+            echo 'Sonar publishers: stopped'
+        fi
+        if docker exec "$container" pgrep -f '[/]pobs_mapping/point_cloud_mapper' >/dev/null 2>&1; then
+            echo 'Point cloud mapper: running'
+        else
+            echo 'Point cloud mapper: stopped'
+        fi
+        ;;
+    topics)
+        need_sim
+        exec_in_sim "$ros_setup && exec ros2 topic list"
+        ;;
+    sonar)
+        need_sim
+        shift
+        sensor=depth
+        if [[ $# -gt 0 && "$1" != --watch ]]; then
+            sensor="$1"
+            shift
+        fi
+        case "$sensor" in
+            left|right|middle|depth) ;;
+            *) echo 'Usage: pobs sonar [left|right|middle|depth] [--watch]' >&2; exit 2 ;;
+        esac
+        echo_args=(--once)
+        if [[ $# -eq 1 && "$1" == --watch ]]; then
+            echo_args=()
+        elif [[ $# -ne 0 ]]; then
+            echo 'Usage: pobs sonar [left|right|middle|depth] [--watch]' >&2
+            exit 2
+        fi
+        exec_args_in_sim ros2 topic echo "/pobs/sonar/sonar_$sensor/range" \
+            --qos-reliability best_effort "${echo_args[@]}"
+        ;;
+    imu|pose|depth|pressure)
+        need_sim
+        topic="/pobs/$1"
+        if [[ "$1" == pose ]]; then
+            topic=/model/pobs/pose
+        fi
+        if [[ $# -eq 1 ]]; then
+            exec_in_sim "$ros_setup && exec ros2 topic echo $topic --once"
+        elif [[ $# -eq 2 && "$2" == --watch ]]; then
+            exec_in_sim "$ros_setup && exec ros2 topic echo $topic"
+        else
+            echo "Usage: pobs $1 [--watch]" >&2
+            exit 2
+        fi
+        ;;
+    run)
+        if [[ $# -lt 3 || ! "$2" =~ ^[a-zA-Z0-9_]+$ || ! "$3" =~ ^[a-zA-Z0-9_]+$ ]]; then
+            echo 'Usage: pobs run PACKAGE EXECUTABLE [ARGS]' >&2
+            exit 2
+        fi
+        need_sim
+        shift
+        exec_args_in_sim ros2 run "$@"
+        ;;
+    reset)
+        if [[ $# -gt 2 || ( $# -eq 2 && "$2" != --paused ) ]]; then
+            echo 'Usage: pobs reset [--paused]' >&2
+            exit 2
+        fi
+        need_sim
+        reset_option=
+        if [[ $# -eq 2 ]]; then
+            reset_option=' --paused'
+        fi
+        exec_in_sim "$ros_setup && exec python3 /home/ros/ros2_ws/scripts/reset_pobs.py$reset_option"
+        ;;
+    stop)
+        need_docker
+        if sim_running; then
+            docker stop "$container" >/dev/null
+        fi
+        if docker container inspect "$container" >/dev/null 2>&1; then
+            docker rm "$container" >/dev/null
+        fi
+        echo 'Lake simulator stopped.'
+        ;;
+    help|-h|--help)
+        usage
+        ;;
+    *)
+        echo "Unknown command: $1" >&2
+        usage >&2
+        exit 2
+        ;;
+esac

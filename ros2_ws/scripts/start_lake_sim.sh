@@ -12,10 +12,9 @@ WORKSPACE_DIR="$HOME/ros2_ws"
 PACKAGE_DIR="$WORKSPACE_DIR/src/pobs_gazebo"
 
 WORLD="$PACKAGE_DIR/worlds/lake.sdf"
-BRIDGE_SCRIPT="$SCRIPT_DIR/bridge_pobs.sh"
-DEPTH_SCRIPT="$SCRIPT_DIR/pobs_depth_sensor.py"
+BRIDGE_SCRIPT="$SCRIPT_DIR/pobs"
 
-for file in "$WORLD" "$BRIDGE_SCRIPT" "$DEPTH_SCRIPT"; do
+for file in "$WORLD" "$BRIDGE_SCRIPT"; do
   if [[ ! -f "$file" ]]; then
     echo "Required file not found: $file" >&2
     exit 1
@@ -52,8 +51,8 @@ echo "Starting lake and POBS..."
 gz sim -r "$WORLD" &
 GAZEBO_PID=$!
 
-echo "Starting bridges and depth/pressure publisher..."
-bash "$BRIDGE_SCRIPT" &
+echo "Starting all four sonars, bridges and depth/pressure publisher..."
+bash "$BRIDGE_SCRIPT" sensors source:=simulation &
 BRIDGE_PID=$!
 
 echo

@@ -12,9 +12,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nano \
     python3-colcon-common-extensions \
     python3-rosdep \
+    python3-serial \
+    python3-numpy \
     python3-vcstool \
     ros-lyrical-turtlesim \
     ros-lyrical-rqt-common-plugins \
+    ros-lyrical-rviz2 \
+    ros-lyrical-sensor-msgs-py \
     ros-lyrical-ros-gz \
     ros-lyrical-ros-gz-sim \
     ros-lyrical-simulation-interfaces \
@@ -37,7 +41,8 @@ RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /home/ros/.bashrc \
         >> /home/ros/.bashrc
 
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY ros2_ws/scripts/pobs /usr/local/bin/pobs
+RUN chmod +x /entrypoint.sh /usr/local/bin/pobs
 
 WORKDIR /home/ros/ros2_ws
 

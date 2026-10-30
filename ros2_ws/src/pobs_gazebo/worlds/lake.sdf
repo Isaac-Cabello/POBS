@@ -57,9 +57,15 @@
       <pose>0 0 0 0 0 0</pose>
     </include>
     <include>
+      <uri>model://sonar_targets</uri>
+      <name>sonar_targets</name>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+    <include>
       <uri>model://pobs</uri>
       <name>pobs</name>
-      <pose>-12 -8 -3 0 0 0</pose>
+      <!-- Start 2.5 m above the local bottom, within the angled sonar range. -->
+      <pose>-12 -8 -6.314902 0 0 0</pose>
     </include>
     <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu" />
     <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">

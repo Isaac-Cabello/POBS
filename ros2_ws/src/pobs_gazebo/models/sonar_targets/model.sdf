@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sdf version="1.10">
+  <model name="sonar_targets">
+    <static>true</static>
+    <link name="boulder_1">
+      <pose>-9.000000000 -7.800000000 -8.371607406 0.000000000 0.000000000 0.000000000</pose>
+      <collision name="boulder_1">
+        <geometry>
+          <mesh>
+            <uri>model://sonar_targets/meshes/boulder_1.obj</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="boulder_1">
+        <geometry>
+          <mesh>
+            <uri>model://sonar_targets/meshes/boulder_1.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.35 0.38 0.42 1</ambient>
+          <diffuse>0.35 0.38 0.42 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <link name="boulder_2">
+      <pose>-14.000000000 -10.000000000 -8.221956017 0.000000000 0.000000000 0.000000000</pose>
+      <collision name="boulder_2">
+        <geometry>
+          <mesh>
+            <uri>model://sonar_targets/meshes/boulder_2.obj</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="boulder_2">
+        <geometry>
+          <mesh>
+            <uri>model://sonar_targets/meshes/boulder_2.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.35 0.38 0.42 1</ambient>
+          <diffuse>0.35 0.38 0.42 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <link name="boulder_3">
+      <pose>-8.000000000 -5.500000000 -8.358545555 0.000000000 0.000000000 0.000000000</pose>
+      <collision name="boulder_3">
+        <geometry>
+          <mesh>
+            <uri>model://sonar_targets/meshes/boulder_3.obj</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="boulder_3">
+        <geometry>
+          <mesh>
+            <uri>model://sonar_targets/meshes/boulder_3.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.35 0.38 0.42 1</ambient>
+          <diffuse>0.35 0.38 0.42 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <link name="wall">
+      <pose>-6.800000000 -8.000000000 -7.026026497 0.000000000 0.000000000 0.000000000</pose>
+      <collision name="wall">
+        <geometry>
+          <box>
+            <size>0.4 6 4.5</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="wall">
+        <geometry>
+          <box>
+            <size>0.4 6 4.5</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.35 0.38 0.42 1</ambient>
+          <diffuse>0.35 0.38 0.42 1</diffuse>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

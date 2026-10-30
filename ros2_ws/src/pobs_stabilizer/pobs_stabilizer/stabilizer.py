@@ -2,20 +2,10 @@ import math
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Wrench
+from nav_msgs.msg import Odometry
 from pathlib import Path
 from pobs_stabilizer.model_properties import load_model_properties
 
-
-#todo: Get robot orientation from the state estimator.
-# Temporary manual orientation in degrees.
-roll_deg = 0.0
-pitch_deg = 0.0
-yaw_deg = 0.0
-
-# Convert to radians for calculations.
-roll = math.radians(roll_deg)
-pitch = math.radians(pitch_deg)
-yaw = math.radians(yaw_deg)
 
 # Read the model and world files from the container's workspace.
 gazebo_folder = Path.home() / "ros2_ws/src/pobs_gazebo"
@@ -100,10 +90,10 @@ class Stabilizer(Node):
     def __init__(self):
         super().__init__("pobs_stabilizer")
 
-        # Temporary orientation. A future subscription will update these.
-        self.roll = roll
-        self.pitch = pitch
-        self.yaw = yaw
+        self.orientation = None
+        self.state_sub = self.create_subscription(
+            Odometry, "/state/odometry", self.state_callback, 10
+        )
 
         # Placeholder topic; torque is about the base_link origin.
         self.publisher = self.create_publisher(
@@ -112,12 +102,22 @@ class Stabilizer(Node):
 
         self.timer = self.create_timer(0.1, self.publish_command)
 
+    def state_callback(self, msg):
+        q = msg.pose.pose.orientation
+        norm = math.hypot(q.x, q.y, q.z, q.w)
+        if not math.isfinite(norm) or norm < 1e-8:
+            return
+        self.orientation = (q.x / norm, q.y / norm, q.z / norm, q.w / norm)
+
     def publish_command(self):
-        # Recalculate using the latest stored orientation.
+        if self.orientation is None:
+            return
+        qx, qy, qz, qw = self.orientation
+        # Rotate world-up into the robot frame using the inverse quaternion.
         up_body = [
-            -math.sin(self.pitch),
-            math.sin(self.roll) * math.cos(self.pitch),
-            math.cos(self.roll) * math.cos(self.pitch),
+            2 * (qx * qz - qw * qy),
+            2 * (qy * qz + qw * qx),
+            1 - 2 * (qx * qx + qy * qy),
         ]
 
         gravity_force = [-weight * direction for direction in up_body]

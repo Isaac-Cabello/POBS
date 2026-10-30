@@ -7,6 +7,11 @@
   <maintainer email="isaac.cabello76@gmail.com">Isaac-Cabello</maintainer>
   <license>Apache-2.0</license>
 
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>pobs_visualization</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_mypy</test_depend>

@@ -20,6 +20,8 @@ __pycache__/
 Thumbs.db
 
 # Local secrets
+# The CAD mesh is a local, optional 132 MB asset.
+ros2_ws/src/pobs_gazebo/models/pobs_cad/meshes/Chassis.STL
 .env
 .env.*
 !.env.example

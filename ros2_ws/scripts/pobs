@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# POBS commands for the project's Linux ROS container.
+set -eo pipefail
+
+usage() {
+  cat <<'HELP'
+Usage: pobs sensors [name:=value ...]
+       pobs rviz [state_estimation] [point_cloud_mapping] [name:=value ...]
+
+Start all sensor publishers (Gazebo must already be running for existing sensors):
+  /pobs/imu, /pobs/depth, /pobs/pressure
+  /pobs/sonar/sonar_left/range
+  /pobs/sonar/sonar_right/range
+  /pobs/sonar/sonar_middle/range
+  /pobs/sonar/sonar_depth/range
+
+Options:
+  config:=/absolute/path/sonars.yaml   Override serial ports and sonar settings.
+  source:=simulation                 Use the mounted Gazebo mapping sensors.
+  existing_sensors:=false             Skip bridges/depth if already running.
+
+Set POBS_WORKSPACE to override the default ~/ros2_ws source workspace.
+
+RViz defaults to both display groups. Specify tags to select initial groups.
+  pobs rviz point_cloud_mapping
+  pobs rviz state_estimation          # Estimator + green/orange trails
+  pobs rviz state_estimation start_estimator:=false  # Existing estimator
+  pobs rviz point_cloud_mapping rviz:=false
+The alias `pobs rvis` is also accepted. Start Gazebo and sensors separately.
+HELP
+}
+
+case "${1:-}" in
+  -h|--help|help|'') usage; exit 0 ;;
+  sensors) COMMAND=sensors; shift ;;
+  rviz|rvis) COMMAND=rviz; shift ;;
+  *) usage >&2; exit 2 ;;
+esac
+
+LAUNCH_ARGS=()
+if [[ "$COMMAND" == rviz ]]; then
+  STATE=false
+  MAPPING=false
+  TAGS=0
+  for ARG in "$@"; do
+    case "$ARG" in
+      state_estimation) STATE=true; TAGS=1 ;;
+      point_cloud_mapping) MAPPING=true; TAGS=1 ;;
+      *:=*) LAUNCH_ARGS+=("$ARG") ;;
+      *) echo "Unknown RViz tag: $ARG" >&2; usage >&2; exit 2 ;;
+    esac
+  done
+  if [[ "$TAGS" == 0 ]]; then STATE=true; MAPPING=true; fi
+  LAUNCH_ARGS=("state_estimation:=$STATE" "point_cloud_mapping:=$MAPPING" "${LAUNCH_ARGS[@]}")
+fi
+
+WORKSPACE_DIR="${POBS_WORKSPACE:-$HOME/ros2_ws}"
+ROS_SETUP="/opt/ros/${ROS_DISTRO:-lyrical}/setup.bash"
+if [[ ! -f "$ROS_SETUP" || ! -f "$WORKSPACE_DIR/install/setup.bash" ]]; then
+  echo "Build the POBS packages in the ROS container before running pobs $COMMAND." >&2
+  exit 1
+fi
+source "$ROS_SETUP"
+source "$WORKSPACE_DIR/install/setup.bash"
+if [[ "$COMMAND" == sensors ]]; then
+  exec ros2 launch pobs_sonar sensors.launch.py "$@"
+fi
+exec ros2 launch pobs_visualization visualization.launch.py "${LAUNCH_ARGS[@]}"

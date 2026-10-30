@@ -24,7 +24,7 @@ cleanup() {
 
   for pid in "$BRIDGE_PID" "$DEPTH_PID"; do
     if [[ -n "$pid" ]]; then
-      kill "$pid" 2>/dev/null || true
+      kill -TERM "$pid" 2>/dev/null || true
     fi
   done
 
@@ -32,25 +32,28 @@ cleanup() {
 }
 
 trap cleanup EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM
+# A requested launcher shutdown is normal; unexpected child failures still
+# propagate through wait -n below.
+trap 'exit 0' INT
+trap 'exit 0' TERM
 
 echo "Starting POBS sensor and pose bridges..."
 
-ros2 run ros_gz_bridge parameter_bridge \
+# Isolate children from the launcher's signal group. Cleanup delivers one
+# termination signal to each executable instead of racing SIGINT against SIGTERM.
+BRIDGE_EXECUTABLE="$(ros2 pkg prefix ros_gz_bridge)/lib/ros_gz_bridge/parameter_bridge"
+setsid "$BRIDGE_EXECUTABLE" \
   '/pobs/imu@sensor_msgs/msg/Imu[gz.msgs.IMU' \
-  '/pobs/sonar@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan' \
   '/model/pobs/pose@geometry_msgs/msg/PoseStamped[gz.msgs.Pose' &
 BRIDGE_PID=$!
 
 echo "Starting POBS depth and pressure publisher..."
 
-python3 "$DEPTH_SCRIPT" &
+setsid python3 "$DEPTH_SCRIPT" &
 DEPTH_PID=$!
 
 echo "POBS topics:"
 echo "  /pobs/imu"
-echo "  /pobs/sonar"
 echo "  /model/pobs/pose"
 echo "  /pobs/depth"
 echo "  /pobs/pressure"

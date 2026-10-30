@@ -1,0 +1,40 @@
+# Separate UART connections; replace these defaults with stable device paths.
+# Shared-host slots at 0, 100, 200, and 300 ms in a 400 ms cycle.
+/pobs/sonar/sonar_left:
+  ros__parameters:
+    port: /dev/ttyUSB0
+    frame_id: sonar_left_link
+    topic: sonar_left/range
+    poll_period_s: 0.4
+    phase_offset_s: 0.0
+    response_timeout_s: 0.05
+    field_of_view_rad: 0.2792526803190927
+/pobs/sonar/sonar_right:
+  ros__parameters:
+    port: /dev/ttyUSB1
+    frame_id: sonar_right_link
+    topic: sonar_right/range
+    poll_period_s: 0.4
+    phase_offset_s: 0.1
+    response_timeout_s: 0.05
+    field_of_view_rad: 0.2792526803190927
+/pobs/sonar/sonar_middle:
+  ros__parameters:
+    port: /dev/ttyUSB2
+    frame_id: sonar_middle_link
+    topic: sonar_middle/range
+    poll_period_s: 0.4
+    phase_offset_s: 0.2
+    response_timeout_s: 0.05
+    field_of_view_rad: 0.2792526803190927
+/pobs/sonar/sonar_depth:
+  ros__parameters:
+    port: /dev/ttyUSB3
+    frame_id: sonar_depth_link
+    topic: sonar_depth/range
+    poll_period_s: 0.4
+    phase_offset_s: 0.3
+    response_timeout_s: 0.05
+    field_of_view_rad: 0.2792526803190927
+    min_range_m: 0.15
+    max_range_m: 6.0

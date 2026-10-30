@@ -1,0 +1,730 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sdf version="1.10">
+  <model name="pobs_cad">
+    <static>false</static>
+    <link name="base_link">
+      <pose>0 0 0 0 0 0</pose>
+      <inertial>
+        <mass>27</mass>
+        <inertia>
+          <ixx>0.38480625000000007</ixx>
+          <iyy>1.4648062500000003</iyy>
+          <izz>1.8000000000000005</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+        <pose>0 0 -0.025 0 0 0</pose>
+        <fluid_added_mass>
+          <xx>5</xx>
+          <yy>15</yy>
+          <zz>20</zz>
+          <pp>0.4</pp>
+          <qq>1</qq>
+          <rr>1.2</rr>
+        </fluid_added_mass>
+      </inertial>
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.8 0.4 0.105</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <pose>-0.4042445 -0.2838934 -0.1204642 1.57079632679 0 1.57079632679</pose>
+        <geometry>
+          <mesh>
+            <uri>model://pobs_cad/meshes/Chassis.STL</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+      </visual>
+      <sensor name="pobs_imu" type="imu">
+        <pose>0 0 0 0 0 0</pose>
+        <topic>/pobs/imu</topic>
+        <update_rate>100</update_rate>
+        <always_on>true</always_on>
+        <imu>
+          <angular_velocity>
+            <x>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.002</stddev>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.002</stddev>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.002</stddev>
+              </noise>
+            </z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.02</stddev>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.02</stddev>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.02</stddev>
+              </noise>
+            </z>
+          </linear_acceleration>
+        </imu>
+      </sensor>
+      <sensor name="sonar_depth" type="gpu_lidar">
+        <pose>0 0 -0.08 0 1.5707963267948966 0</pose>
+        <topic>/pobs/sonar/sonar_depth/scan</topic>
+        <update_rate>10</update_rate>
+        <always_on>true</always_on>
+        <visualize>false</visualize>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>0.15</min>
+            <max>30</max>
+            <resolution>0.01</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </lidar>
+      </sensor>
+      <visual name="sonar_left_housing">
+        <pose>0.417979185 0.15 -0.007979185 0 2.3561944901923448 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.014</radius>
+            <length>0.034</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.08 0.10 0.12 1</ambient>
+          <diffuse>0.08 0.10 0.12 1</diffuse>
+        </material>
+      </visual>
+      <visual name="sonar_left_face">
+        <pose>0.430000000 0.15 -0.020000000 0 2.3561944901923448 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.013</radius>
+            <length>0.002</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.80 0.85 0.88 1</ambient>
+          <diffuse>0.80 0.85 0.88 1</diffuse>
+        </material>
+      </visual>
+      <visual name="sonar_left_bracket">
+        <pose>0.404 0.15 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.012 0.04 0.05</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.25 0.28 0.30 1</ambient>
+          <diffuse>0.25 0.28 0.30 1</diffuse>
+        </material>
+      </visual>
+      <sensor name="sonar_left" type="gpu_lidar">
+        <pose>0.43 0.15 -0.02 0.0 0.7853981633974483 0.0</pose>
+        <topic>/pobs/sonar/sonar_left/scan</topic>
+        <update_rate>10</update_rate>
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>0.05</min>
+            <max>6.0</max>
+            <resolution>0.001</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </lidar>
+      </sensor>
+      <visual name="sonar_right_housing">
+        <pose>0.417979185 -0.15 -0.007979185 0 2.3561944901923448 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.014</radius>
+            <length>0.034</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.08 0.10 0.12 1</ambient>
+          <diffuse>0.08 0.10 0.12 1</diffuse>
+        </material>
+      </visual>
+      <visual name="sonar_right_face">
+        <pose>0.430000000 -0.15 -0.020000000 0 2.3561944901923448 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.013</radius>
+            <length>0.002</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.80 0.85 0.88 1</ambient>
+          <diffuse>0.80 0.85 0.88 1</diffuse>
+        </material>
+      </visual>
+      <visual name="sonar_right_bracket">
+        <pose>0.404 -0.15 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.012 0.04 0.05</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.25 0.28 0.30 1</ambient>
+          <diffuse>0.25 0.28 0.30 1</diffuse>
+        </material>
+      </visual>
+      <sensor name="sonar_right" type="gpu_lidar">
+        <pose>0.43 -0.15 -0.02 0.0 0.7853981633974483 0.0</pose>
+        <topic>/pobs/sonar/sonar_right/scan</topic>
+        <update_rate>10</update_rate>
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>0.05</min>
+            <max>6.0</max>
+            <resolution>0.001</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </lidar>
+      </sensor>
+      <visual name="sonar_middle_housing">
+        <pose>0.423000000 0.0 0.000000000 0 1.5707963267948966 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.014</radius>
+            <length>0.034</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.08 0.10 0.12 1</ambient>
+          <diffuse>0.08 0.10 0.12 1</diffuse>
+        </material>
+      </visual>
+      <visual name="sonar_middle_face">
+        <pose>0.440000000 0.0 0.000000000 0 1.5707963267948966 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.013</radius>
+            <length>0.002</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.80 0.85 0.88 1</ambient>
+          <diffuse>0.80 0.85 0.88 1</diffuse>
+        </material>
+      </visual>
+      <visual name="sonar_middle_bracket">
+        <pose>0.404 0.0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.012 0.04 0.05</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.25 0.28 0.30 1</ambient>
+          <diffuse>0.25 0.28 0.30 1</diffuse>
+        </material>
+      </visual>
+      <sensor name="sonar_middle" type="gpu_lidar">
+        <pose>0.44 0.0 0.0 0.0 0.0000000000000000 0.0</pose>
+        <topic>/pobs/sonar/sonar_middle/scan</topic>
+        <update_rate>10</update_rate>
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>0.05</min>
+            <max>6.0</max>
+            <resolution>0.001</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </lidar>
+      </sensor>
+      <visual name="sonar_depth_housing">
+        <pose>-0.000000000 0.0 -0.063000000 0 3.1415926535897931 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.014</radius>
+            <length>0.034</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.08 0.10 0.12 1</ambient>
+          <diffuse>0.08 0.10 0.12 1</diffuse>
+        </material>
+      </visual>
+      <visual name="sonar_depth_face">
+        <pose>0.000000000 0.0 -0.080000000 0 3.1415926535897931 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.013</radius>
+            <length>0.002</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.80 0.85 0.88 1</ambient>
+          <diffuse>0.80 0.85 0.88 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <plugin filename="gz-sim-hydrodynamics-system" name="gz::sim::systems::Hydrodynamics">
+      <link_name>base_link</link_name>
+      <disable_added_mass>true</disable_added_mass>
+      <default_current>0 0 0</default_current>
+      <xU>-2</xU>
+      <yV>-4</yV>
+      <zW>-5</zW>
+      <kP>-0.1</kP>
+      <mQ>-0.2</mQ>
+      <nR>-0.3</nR>
+      <xUabsU>-12</xUabsU>
+      <yVabsV>-35</yVabsV>
+      <zWabsW>-50</zWabsW>
+      <kPabsP>-0.5</kPabsP>
+      <mQabsQ>-1.5</mQabsQ>
+      <nRabsR>-2</nRabsR>
+    </plugin>
+    <link name="front_left">
+      <pose>0.28 0.25 0.08 0 -1.5707963267948966 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.0004427083333333334</ixx>
+          <iyy>4.270833333333334e-05</iyy>
+          <izz>0.00043333333333333337</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.02 0.1 0.025</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.18 0.22 0.25 1</ambient>
+          <diffuse>0.18 0.22 0.25 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="front_left_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>front_left</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+          <effort>100</effort>
+          <velocity>1000</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
+      <namespace>pobs</namespace>
+      <joint_name>front_left_joint</joint_name>
+      <fluid_density>1000</fluid_density>
+      <propeller_diameter>0.1</propeller_diameter>
+      <thrust_coefficient>0.004422</thrust_coefficient>
+      <use_angvel_cmd>0</use_angvel_cmd>
+    </plugin>
+    <link name="front_right">
+      <pose>0.28 -0.25 0.08 0 -1.5707963267948966 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.0004427083333333334</ixx>
+          <iyy>4.270833333333334e-05</iyy>
+          <izz>0.00043333333333333337</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.02 0.1 0.025</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.18 0.22 0.25 1</ambient>
+          <diffuse>0.18 0.22 0.25 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="front_right_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>front_right</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+          <effort>100</effort>
+          <velocity>1000</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
+      <namespace>pobs</namespace>
+      <joint_name>front_right_joint</joint_name>
+      <fluid_density>1000</fluid_density>
+      <propeller_diameter>0.1</propeller_diameter>
+      <thrust_coefficient>0.004422</thrust_coefficient>
+      <use_angvel_cmd>0</use_angvel_cmd>
+    </plugin>
+    <link name="back_left">
+      <pose>-0.28 0.25 0.08 0 -1.5707963267948966 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.0004427083333333334</ixx>
+          <iyy>4.270833333333334e-05</iyy>
+          <izz>0.00043333333333333337</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.02 0.1 0.025</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.18 0.22 0.25 1</ambient>
+          <diffuse>0.18 0.22 0.25 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="back_left_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>back_left</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+          <effort>100</effort>
+          <velocity>1000</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
+      <namespace>pobs</namespace>
+      <joint_name>back_left_joint</joint_name>
+      <fluid_density>1000</fluid_density>
+      <propeller_diameter>0.1</propeller_diameter>
+      <thrust_coefficient>0.004422</thrust_coefficient>
+      <use_angvel_cmd>0</use_angvel_cmd>
+    </plugin>
+    <link name="back_right">
+      <pose>-0.28 -0.25 0.08 0 -1.5707963267948966 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.0004427083333333334</ixx>
+          <iyy>4.270833333333334e-05</iyy>
+          <izz>0.00043333333333333337</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.02 0.1 0.025</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.18 0.22 0.25 1</ambient>
+          <diffuse>0.18 0.22 0.25 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="back_right_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>back_right</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+          <effort>100</effort>
+          <velocity>1000</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
+      <namespace>pobs</namespace>
+      <joint_name>back_right_joint</joint_name>
+      <fluid_density>1000</fluid_density>
+      <propeller_diameter>0.1</propeller_diameter>
+      <thrust_coefficient>0.004422</thrust_coefficient>
+      <use_angvel_cmd>0</use_angvel_cmd>
+    </plugin>
+    <link name="left_thruster">
+      <pose>-0.46 0.16 0 0 0 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.0004427083333333334</ixx>
+          <iyy>4.270833333333334e-05</iyy>
+          <izz>0.00043333333333333337</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.02 0.1 0.025</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.18 0.22 0.25 1</ambient>
+          <diffuse>0.18 0.22 0.25 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="left_thruster_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>left_thruster</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+          <effort>100</effort>
+          <velocity>1000</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
+      <namespace>pobs</namespace>
+      <joint_name>left_thruster_joint</joint_name>
+      <fluid_density>1000</fluid_density>
+      <propeller_diameter>0.1</propeller_diameter>
+      <thrust_coefficient>0.004422</thrust_coefficient>
+      <use_angvel_cmd>0</use_angvel_cmd>
+    </plugin>
+    <link name="right_thruster">
+      <pose>-0.46 -0.16 0 0 0 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.0004427083333333334</ixx>
+          <iyy>4.270833333333334e-05</iyy>
+          <izz>0.00043333333333333337</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.02 0.1 0.025</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.18 0.22 0.25 1</ambient>
+          <diffuse>0.18 0.22 0.25 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="right_thruster_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>right_thruster</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-1e+16</lower>
+          <upper>1e+16</upper>
+          <effort>100</effort>
+          <velocity>1000</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
+      <namespace>pobs</namespace>
+      <joint_name>right_thruster_joint</joint_name>
+      <fluid_density>1000</fluid_density>
+      <propeller_diameter>0.1</propeller_diameter>
+      <thrust_coefficient>0.004422</thrust_coefficient>
+      <use_angvel_cmd>0</use_angvel_cmd>
+    </plugin>
+    <link name="port_fin">
+      <pose>-0.3 0.27 0 0 0 0</pose>
+      <inertial>
+        <mass>0.25</mass>
+        <inertia>
+          <ixx>0.00040966666666666674</ixx>
+          <iyy>0.0005346666666666667</iyy>
+          <izz>0.0009416666666666667</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.16 0.14 0.008</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.18 0.22 0.25 1</ambient>
+          <diffuse>0.18 0.22 0.25 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="port_fin_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>port_fin</child>
+    </joint>
+    <plugin filename="gz-sim-lift-drag-system" name="gz::sim::systems::LiftDrag">
+      <link_name>port_fin</link_name>
+      <air_density>1000</air_density>
+      <area>0.0224</area>
+      <a0>0</a0>
+      <cla>4</cla>
+      <cda>0.1</cda>
+      <alpha_stall>0.25</alpha_stall>
+      <cla_stall>-1</cla_stall>
+      <cda_stall>0.5</cda_stall>
+      <forward>1 0 0</forward>
+      <upward>0 0 1</upward>
+      <cp>0 0 0</cp>
+    </plugin>
+    <link name="starboard_fin">
+      <pose>-0.3 -0.27 0 0 0 0</pose>
+      <inertial>
+        <mass>0.25</mass>
+        <inertia>
+          <ixx>0.00040966666666666674</ixx>
+          <iyy>0.0005346666666666667</iyy>
+          <izz>0.0009416666666666667</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.16 0.14 0.008</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.18 0.22 0.25 1</ambient>
+          <diffuse>0.18 0.22 0.25 1</diffuse>
+        </material>
+      </visual>
+    </link>
+    <joint name="starboard_fin_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>starboard_fin</child>
+    </joint>
+    <plugin filename="gz-sim-lift-drag-system" name="gz::sim::systems::LiftDrag">
+      <link_name>starboard_fin</link_name>
+      <air_density>1000</air_density>
+      <area>0.0224</area>
+      <a0>0</a0>
+      <cla>4</cla>
+      <cda>0.1</cda>
+      <alpha_stall>0.25</alpha_stall>
+      <cla_stall>-1</cla_stall>
+      <cda_stall>0.5</cda_stall>
+      <forward>1 0 0</forward>
+      <upward>0 0 1</upward>
+      <cp>0 0 0</cp>
+    </plugin>
+    <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+      <publish_model_pose>true</publish_model_pose>
+      <publish_nested_model_pose>true</publish_nested_model_pose>
+      <publish_link_pose>false</publish_link_pose>
+      <publish_visual_pose>false</publish_visual_pose>
+      <publish_collision_pose>false</publish_collision_pose>
+      <publish_sensor_pose>false</publish_sensor_pose>
+      <use_pose_vector_msg>false</use_pose_vector_msg>
+      <update_frequency>20</update_frequency>
+    </plugin>
+  </model>
+</sdf>

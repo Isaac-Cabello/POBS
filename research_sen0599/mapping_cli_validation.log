@@ -1,0 +1,12 @@
+[INFO] [launch]: All log files can be found below /root/.ros/log/2026-10-24-02-39-55-712482-be3f61a896e8-2450
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [visualization_clock_bridge-1]: process started with pid [2483]
+[INFO] [point_cloud_mapper-2]: process started with pid [2484]
+[visualization_clock_bridge-1] [INFO] [1792809595.931504951] [visualization_clock_bridge]: Creating GZ->ROS Bridge: [/world/lake/clock (gz.msgs.Clock) -> /world/lake/clock (rosgraph_msgs/msg/Clock)] (Lazy 0)
+[point_cloud_mapper-2] [INFO] [1792809596.257964181] [point_cloud_mapper]: Loaded four SDF sensor transforms from /tmp/mapping_ws/src/pobs_gazebo/models/pobs/model.sdf; accumulating all accepted points in lake
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [point_cloud_mapper-2]: sending signal 'SIGINT' to process[point_cloud_mapper-2]
+[INFO] [visualization_clock_bridge-1]: sending signal 'SIGINT' to process[visualization_clock_bridge-1]
+[visualization_clock_bridge-1] [INFO] [1792809596.290798186] [rclcpp]: signal_handler(signum=15)
+[INFO] [point_cloud_mapper-2]: process has finished cleanly [pid 2484]
+[INFO] [visualization_clock_bridge-1]: process has finished cleanly [pid 2483]

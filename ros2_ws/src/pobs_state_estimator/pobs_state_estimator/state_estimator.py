@@ -2,8 +2,30 @@ import math
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
-from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import PointStamped # swap to pointStamp befor push
 from nav_msgs.msg import Odometry
+
+def rotate_vector_by_quaternion(v, q):
+    """Rotate a 3D vector from body coordinates into world coordinates."""
+    x, y, z, w = q
+    vx, vy, vz = v
+    # Quaternion-derived rotation matrix
+    return (
+        (1 - 2*(y*y + z*z))*vx
+        + 2*(x*y - z*w)*vy
+        + 2*(x*z + y*w)*vz,
+        2*(x*y + z*w)*vx
+        + (1 - 2*(x*x + z*z))*vy
+        + 2*(y*z - x*w)*vz,
+        2*(x*z - y*w)*vx
+        + 2*(y*z + x*w)*vy
+        + (1 - 2*(x*x + y*y))*vz,
+    )
+def rotate_world_to_body(v, q):
+    """Rotate a vector from world coordinates into body coordinates."""
+    x, y, z, w = q
+    q_inverse = (-x, -y, -z, w)
+    return rotate_vector_by_quaternion(v, q_inverse)
 
 class StateEstimator(Node):
     def __init__(self):
@@ -27,6 +49,13 @@ class StateEstimator(Node):
         self.orientation = None
         self.angular_velocity = None
         self.last_imu_stamp = None
+        self.world_acceleration = None
+
+        self.velocity_x = 0.0
+        self.velocity_y = 0.0
+        self.position_x = 0.0
+        self.position_y = 0.0
+        self.last_integration_stamp = None
 
         self.imu_sub = self.create_subscription(
             Imu,
@@ -59,12 +88,65 @@ class StateEstimator(Node):
         q = msg.orientation
         norm = math.sqrt(q.x**2 +q.y**2 + q.z**2 + q.w**2)
         if norm < 1e-8 or msg.orientation_covariance[0] ==-1:
-            self.get_logger().warn('IMU orientation unavailable  ')
+            self.get_logger().warning('IMU orientation unavailable  ')
             return
         self.orientation=(q.x/norm, q.y/norm, q.z/norm, q.w/norm )
-
+        accel_body = (msg.linear_acceleration.x,
+                        msg.linear_acceleration.y,
+                        msg.linear_acceleration.z,)
+        accel_world = rotate_vector_by_quaternion(accel_body,self.orientation)
+        self.world_acceleration = (
+            accel_world[0],
+            accel_world[1],
+            accel_world[2] - 9.81,
+        )
+        self.get_logger().info(
+            f'Gravity-compensated accel: '
+            f'ax={self.world_acceleration[0]:.4f}, '
+            f'ay={self.world_acceleration[1]:.4f}, '
+            f'az={self.world_acceleration[2]:.4f}',
+            throttle_duration_sec=2.0,
+)
         self.angular_velocity=(msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z,)
         self.last_imu_stamp = msg.header.stamp
+        stamp = (
+            msg.header.stamp.sec
+            + msg.header.stamp.nanosec * 1e-9
+        )
+        if stamp <= 0.0:
+            return
+        if self.last_integration_stamp is None:
+            self.last_integration_stamp = stamp
+            return
+        dt = stamp - self.last_integration_stamp
+        if dt == 0.0: # duplicate imu timstamp
+            return
+        if dt < 0.0: # sim clock moved backward - reset integration state
+            self.last_integration_stamp = stamp
+            self.velocity_x = 0.0
+            self.velocity_y = 0.0
+            self.position_x=0.0
+            self.position_y=0.0
+            return
+
+        self.last_integration_stamp = stamp
+
+        #gravity compensated h acc
+        ax = self.world_acceleration[0]
+        ay = self.world_acceleration[1]
+        # Ignore small acceleration fluctuations caused by sensor noise
+        accel_deadband = 0.01  # m/s^2
+        if abs(ax) < accel_deadband:
+            ax = 0.0
+        if abs(ay) < accel_deadband:
+            ay = 0.0
+        #update pos suign current velocity and ac
+        self.position_x += self.velocity_x * dt +0.5 * ax * dt**2
+        self.position_y += self.velocity_y * dt +0.5 * ay * dt**2
+        #update v
+        self.velocity_x += ax* dt
+        self.velocity_y  += ay*dt
+
         self.get_logger().info(
             f'IMU received: '
             f'w={self.orientation[3]:.3f}, '
@@ -72,6 +154,7 @@ class StateEstimator(Node):
             throttle_duration_sec=2.0,
             )
     def depth_callback(self, msg:PointStamped):
+        # Absolute positive water depth, not the downward sonar's bottom clearance.
         depth = float(msg.point.z)
         stamp = (msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9)
         if not math.isfinite(depth) or depth < 0.0:
@@ -111,8 +194,8 @@ class StateEstimator(Node):
         odom.header.frame_id = 'odom'
         odom.child_frame_id = "base_link"
 
-        odom.pose.pose.position.x = 0.0
-        odom.pose.pose.position.y = 0.0
+        odom.pose.pose.position.x = self.position_x
+        odom.pose.pose.position.y = self.position_y
         odom.pose.pose.position.z = - self.depth_m
         (
             odom.pose.pose.orientation.x,
@@ -120,7 +203,17 @@ class StateEstimator(Node):
             odom.pose.pose.orientation.z,
             odom.pose.pose.orientation.w,
         ) = self.orientation
-        odom.twist.twist.linear.z = -self.vertical_velocity_ms
+        velocity_body = rotate_world_to_body(
+            (
+                self.velocity_x,
+                self.velocity_y,
+                -self.vertical_velocity_ms,
+            ),
+            self.orientation,
+        )
+        odom.twist.twist.linear.x = velocity_body[0]
+        odom.twist.twist.linear.y = velocity_body[1]
+        odom.twist.twist.linear.z = velocity_body[2]
         (
             odom.twist.twist.angular.x,
             odom.twist.twist.angular.y,
