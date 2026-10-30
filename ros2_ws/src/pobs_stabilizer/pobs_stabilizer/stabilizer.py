@@ -1,7 +1,8 @@
+
 import math
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Wrench
+from geometry_msgs.msg import Wrench, WrenchStamped
 from nav_msgs.msg import Odometry
 from pathlib import Path
 from pobs_stabilizer.model_properties import load_model_properties
@@ -62,14 +63,10 @@ print("Center of mass (m):", center_of_mass)
 print("Center of buoyancy (m):", center_of_buoyancy)
 
 # Gravity and buoyancy magnitudes, in newtons.
-# lake.sdf has gravity pointing along negative world z.
 g = -properties["gravity"][2]
 
 weight = total_mass * g
 buoyancy = properties["water_density"] * total_volume * g
-
-
-
 
 
 def cross(a, b):
@@ -81,43 +78,60 @@ def cross(a, b):
     ]
 
 
-
-
-
-
-
 class Stabilizer(Node):
     def __init__(self):
         super().__init__("pobs_stabilizer")
 
+        # Latest orientation received from the state estimator.
         self.orientation = None
+
+        # Subscribe to the state estimator's odometry output.
         self.state_sub = self.create_subscription(
-            Odometry, "/state/odometry", self.state_callback, 10
+            Odometry,
+            '/state/odometry',
+            self.state_callback,
+            10
         )
 
-        # Placeholder topic; torque is about the base_link origin.
+        # Publish the desired force and torque.
         self.publisher = self.create_publisher(
             Wrench, "/desired_wrench", 10
+        )
+        self.command_publisher = self.create_publisher(
+            WrenchStamped, "/cmd_wrench", 10
         )
 
         self.timer = self.create_timer(0.1, self.publish_command)
 
     def state_callback(self, msg):
+        # Read the robot's orientation quaternion.
         q = msg.pose.pose.orientation
-        norm = math.hypot(q.x, q.y, q.z, q.w)
+
+        # Normalize the quaternion.
+        norm = math.sqrt(q.x**2 + q.y**2 + q.z**2 + q.w**2)
+
         if not math.isfinite(norm) or norm < 1e-8:
             return
-        self.orientation = (q.x / norm, q.y / norm, q.z / norm, q.w / norm)
+
+        self.orientation = (
+            q.x / norm,
+            q.y / norm,
+            q.z / norm,
+            q.w / norm
+        )
 
     def publish_command(self):
+        # Wait until the state estimator provides orientation.
         if self.orientation is None:
             return
+
         qx, qy, qz, qw = self.orientation
-        # Rotate world-up into the robot frame using the inverse quaternion.
+
+        # Calculate world-up direction in robot coordinates.
         up_body = [
-            2 * (qx * qz - qw * qy),
-            2 * (qy * qz + qw * qx),
-            1 - 2 * (qx * qx + qy * qy),
+            2 * (qx*qz - qw*qy),
+            2 * (qy*qz + qw*qx),
+            1 - 2 * (qx*qx + qy*qy),
         ]
 
         gravity_force = [-weight * direction for direction in up_body]
@@ -141,6 +155,12 @@ class Stabilizer(Node):
         msg.torque.x, msg.torque.y, msg.torque.z = feedforward_torque
 
         self.publisher.publish(msg)
+        command = WrenchStamped()
+        command.header.stamp = self.get_clock().now().to_msg()
+        command.header.frame_id = 'base_link'
+        command.wrench = msg
+        self.command_publisher.publish(command)
+
 
 def main(args=None):
     rclpy.init(args=args)

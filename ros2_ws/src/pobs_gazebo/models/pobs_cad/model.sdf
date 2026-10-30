@@ -32,6 +32,11 @@
         </geometry>
       </collision>
       <visual name="visual">
+<<<<<<< HEAD
+=======
+        <!-- The CAD STL is in millimeters, with its long axis along CAD Z.
+             Rotate it into the robot's X-forward frame and center the casing. -->
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
         <pose>-0.4042445 -0.2838934 -0.1204642 1.57079632679 0 1.57079632679</pose>
         <geometry>
           <mesh>
@@ -39,6 +44,13 @@
             <scale>0.001 0.001 0.001</scale>
           </mesh>
         </geometry>
+<<<<<<< HEAD
+=======
+        <material>
+          <ambient>0.85 0.65 0.05 1</ambient>
+          <diffuse>0.85 0.65 0.05 1</diffuse>
+        </material>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       </visual>
       <sensor name="pobs_imu" type="imu">
         <pose>0 0 0 0 0 0</pose>
@@ -88,9 +100,15 @@
           </linear_acceleration>
         </imu>
       </sensor>
+<<<<<<< HEAD
       <sensor name="sonar_depth" type="gpu_lidar">
         <pose>0 0 -0.08 0 1.5707963267948966 0</pose>
         <topic>/pobs/sonar/sonar_depth/scan</topic>
+=======
+      <sensor name="downward_sonar" type="gpu_lidar">
+        <pose>0 0 -0.08 0 1.5707963267948966 0</pose>
+        <topic>/pobs/sonar</topic>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
         <update_rate>10</update_rate>
         <always_on>true</always_on>
         <visualize>false</visualize>
@@ -115,6 +133,7 @@
           </noise>
         </lidar>
       </sensor>
+<<<<<<< HEAD
       <visual name="sonar_left_housing">
         <pose>0.417979185 0.15 -0.007979185 0 2.3561944901923448 0</pose>
         <geometry>
@@ -336,6 +355,8 @@
           <diffuse>0.80 0.85 0.88 1</diffuse>
         </material>
       </visual>
+=======
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
     </link>
     <plugin filename="gz-sim-hydrodynamics-system" name="gz::sim::systems::Hydrodynamics">
       <link_name>base_link</link_name>
@@ -354,7 +375,11 @@
       <mQabsQ>-1.5</mQabsQ>
       <nRabsR>-2</nRabsR>
     </plugin>
+<<<<<<< HEAD
     <link name="front_left">
+=======
+    <link name="thruster_0">
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <pose>0.28 0.25 0.08 0 -1.5707963267948966 0</pose>
       <inertial>
         <mass>0.5</mass>
@@ -379,9 +404,15 @@
         </material>
       </visual>
     </link>
+<<<<<<< HEAD
     <joint name="front_left_joint" type="revolute">
       <parent>base_link</parent>
       <child>front_left</child>
+=======
+    <joint name="thruster_0_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>thruster_0</child>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <axis>
         <xyz>1 0 0</xyz>
         <limit>
@@ -394,13 +425,21 @@
     </joint>
     <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
       <namespace>pobs</namespace>
+<<<<<<< HEAD
       <joint_name>front_left_joint</joint_name>
+=======
+      <joint_name>thruster_0_joint</joint_name>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <fluid_density>1000</fluid_density>
       <propeller_diameter>0.1</propeller_diameter>
       <thrust_coefficient>0.004422</thrust_coefficient>
       <use_angvel_cmd>0</use_angvel_cmd>
     </plugin>
+<<<<<<< HEAD
     <link name="front_right">
+=======
+    <link name="thruster_1">
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <pose>0.28 -0.25 0.08 0 -1.5707963267948966 0</pose>
       <inertial>
         <mass>0.5</mass>
@@ -425,9 +464,15 @@
         </material>
       </visual>
     </link>
+<<<<<<< HEAD
     <joint name="front_right_joint" type="revolute">
       <parent>base_link</parent>
       <child>front_right</child>
+=======
+    <joint name="thruster_1_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>thruster_1</child>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <axis>
         <xyz>1 0 0</xyz>
         <limit>
@@ -440,13 +485,21 @@
     </joint>
     <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
       <namespace>pobs</namespace>
+<<<<<<< HEAD
       <joint_name>front_right_joint</joint_name>
+=======
+      <joint_name>thruster_1_joint</joint_name>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <fluid_density>1000</fluid_density>
       <propeller_diameter>0.1</propeller_diameter>
       <thrust_coefficient>0.004422</thrust_coefficient>
       <use_angvel_cmd>0</use_angvel_cmd>
     </plugin>
+<<<<<<< HEAD
     <link name="back_left">
+=======
+    <link name="thruster_2">
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <pose>-0.28 0.25 0.08 0 -1.5707963267948966 0</pose>
       <inertial>
         <mass>0.5</mass>
@@ -471,9 +524,15 @@
         </material>
       </visual>
     </link>
+<<<<<<< HEAD
     <joint name="back_left_joint" type="revolute">
       <parent>base_link</parent>
       <child>back_left</child>
+=======
+    <joint name="thruster_2_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>thruster_2</child>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <axis>
         <xyz>1 0 0</xyz>
         <limit>
@@ -486,13 +545,21 @@
     </joint>
     <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
       <namespace>pobs</namespace>
+<<<<<<< HEAD
       <joint_name>back_left_joint</joint_name>
+=======
+      <joint_name>thruster_2_joint</joint_name>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <fluid_density>1000</fluid_density>
       <propeller_diameter>0.1</propeller_diameter>
       <thrust_coefficient>0.004422</thrust_coefficient>
       <use_angvel_cmd>0</use_angvel_cmd>
     </plugin>
+<<<<<<< HEAD
     <link name="back_right">
+=======
+    <link name="thruster_3">
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <pose>-0.28 -0.25 0.08 0 -1.5707963267948966 0</pose>
       <inertial>
         <mass>0.5</mass>
@@ -517,9 +584,15 @@
         </material>
       </visual>
     </link>
+<<<<<<< HEAD
     <joint name="back_right_joint" type="revolute">
       <parent>base_link</parent>
       <child>back_right</child>
+=======
+    <joint name="thruster_3_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>thruster_3</child>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <axis>
         <xyz>1 0 0</xyz>
         <limit>
@@ -532,13 +605,21 @@
     </joint>
     <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
       <namespace>pobs</namespace>
+<<<<<<< HEAD
       <joint_name>back_right_joint</joint_name>
+=======
+      <joint_name>thruster_3_joint</joint_name>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <fluid_density>1000</fluid_density>
       <propeller_diameter>0.1</propeller_diameter>
       <thrust_coefficient>0.004422</thrust_coefficient>
       <use_angvel_cmd>0</use_angvel_cmd>
     </plugin>
+<<<<<<< HEAD
     <link name="left_thruster">
+=======
+    <link name="thruster_4">
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <pose>-0.46 0.16 0 0 0 0</pose>
       <inertial>
         <mass>0.5</mass>
@@ -563,9 +644,15 @@
         </material>
       </visual>
     </link>
+<<<<<<< HEAD
     <joint name="left_thruster_joint" type="revolute">
       <parent>base_link</parent>
       <child>left_thruster</child>
+=======
+    <joint name="thruster_4_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>thruster_4</child>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <axis>
         <xyz>1 0 0</xyz>
         <limit>
@@ -578,13 +665,21 @@
     </joint>
     <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
       <namespace>pobs</namespace>
+<<<<<<< HEAD
       <joint_name>left_thruster_joint</joint_name>
+=======
+      <joint_name>thruster_4_joint</joint_name>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <fluid_density>1000</fluid_density>
       <propeller_diameter>0.1</propeller_diameter>
       <thrust_coefficient>0.004422</thrust_coefficient>
       <use_angvel_cmd>0</use_angvel_cmd>
     </plugin>
+<<<<<<< HEAD
     <link name="right_thruster">
+=======
+    <link name="thruster_5">
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <pose>-0.46 -0.16 0 0 0 0</pose>
       <inertial>
         <mass>0.5</mass>
@@ -609,9 +704,15 @@
         </material>
       </visual>
     </link>
+<<<<<<< HEAD
     <joint name="right_thruster_joint" type="revolute">
       <parent>base_link</parent>
       <child>right_thruster</child>
+=======
+    <joint name="thruster_5_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>thruster_5</child>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <axis>
         <xyz>1 0 0</xyz>
         <limit>
@@ -624,7 +725,11 @@
     </joint>
     <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
       <namespace>pobs</namespace>
+<<<<<<< HEAD
       <joint_name>right_thruster_joint</joint_name>
+=======
+      <joint_name>thruster_5_joint</joint_name>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
       <fluid_density>1000</fluid_density>
       <propeller_diameter>0.1</propeller_diameter>
       <thrust_coefficient>0.004422</thrust_coefficient>
@@ -727,4 +832,8 @@
       <update_frequency>20</update_frequency>
     </plugin>
   </model>
+<<<<<<< HEAD
 </sdf>
+=======
+</sdf>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47

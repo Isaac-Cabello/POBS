@@ -57,6 +57,7 @@
       <pose>0 0 0 0 0 0</pose>
     </include>
     <include>
+<<<<<<< HEAD
       <uri>model://sonar_targets</uri>
       <name>sonar_targets</name>
       <pose>0 0 0 0 0 0</pose>
@@ -65,6 +66,11 @@
       <uri>model://pobs_cad</uri>
       <name>pobs</name>
       <pose>-12 -8 -6.314902 0 0 0</pose>
+=======
+      <uri>model://pobs_cad</uri>
+      <name>pobs</name>
+      <pose>-12 -8 -3 0 0 0</pose>
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
     </include>
     <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu" />
     <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">

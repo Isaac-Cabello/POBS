@@ -78,4 +78,7 @@ def test_failed_restore_leaves_world_paused():
         gazebo.reset()
     assert gazebo.snapshot.stats.paused
     assert len(gazebo.calls) == 3
+<<<<<<< HEAD
 
+=======
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47

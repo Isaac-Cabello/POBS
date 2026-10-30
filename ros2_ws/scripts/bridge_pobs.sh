@@ -43,6 +43,7 @@ echo "Starting POBS sensor and pose bridges..."
 # termination signal to each executable instead of racing SIGINT against SIGTERM.
 BRIDGE_EXECUTABLE="$(ros2 pkg prefix ros_gz_bridge)/lib/ros_gz_bridge/parameter_bridge"
 setsid "$BRIDGE_EXECUTABLE" \
+  '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock' \
   '/pobs/imu@sensor_msgs/msg/Imu[gz.msgs.IMU' \
   '/model/pobs/pose@geometry_msgs/msg/PoseStamped[gz.msgs.Pose' &
 BRIDGE_PID=$!
@@ -53,9 +54,10 @@ setsid python3 "$DEPTH_SCRIPT" &
 DEPTH_PID=$!
 
 echo "POBS topics:"
+echo "  /clock"
 echo "  /pobs/imu"
 echo "  /model/pobs/pose"
-echo "  /pobs/depth"
+echo "  /pobs/depth (PointStamped: positive depth in point.z)"
 echo "  /pobs/pressure"
 echo
 echo "Leave this terminal open. Press Ctrl+C to stop both processes."

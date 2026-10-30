@@ -8,8 +8,11 @@ The CAD export is intentionally ignored by Git. Place `Chassis.STL` in this
 directory's `meshes/` subdirectory before using the CAD world. The STL is
 scaled from millimeters and centered by `model.sdf`. The collision and physics
 properties remain the same as the simple robot.
+<<<<<<< HEAD
 
 From the Ubuntu WSL host use `pobs sim --cad` (optionally `--headless`). After
 changing the default robot or world, run
 `python3 ~/ros2_ws/scripts/sync_robot_variants.py` inside the container to update
 this variant. This retains the four sonar mounts and descriptive motor names.
+=======
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47

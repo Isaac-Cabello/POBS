@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
+from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 import os
@@ -16,6 +16,10 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        SetEnvironmentVariable(
+            'GZ_SIM_RESOURCE_PATH',
+            os.path.join(pobs_gazebo_share, 'models') + os.pathsep
+            + os.environ.get('GZ_SIM_RESOURCE_PATH', '')),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(

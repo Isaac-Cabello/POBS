@@ -1,4 +1,5 @@
 from setuptools import find_packages, setup
+from glob import glob
 
 package_name = 'pobs_stabilizer'
 
@@ -10,6 +11,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
     ],
     package_data={'': ['py.typed']},
     install_requires=['setuptools'],
@@ -25,6 +27,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'stabilizer = pobs_stabilizer.stabilizer:main',
+            'thruster_allocator = pobs_stabilizer.thruster_allocator:main',
         ],
     },
 )

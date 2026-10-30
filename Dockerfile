@@ -18,7 +18,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-lyrical-turtlesim \
     ros-lyrical-rqt-common-plugins \
     ros-lyrical-rviz2 \
+<<<<<<< HEAD
     ros-lyrical-sensor-msgs-py \
+=======
+>>>>>>> fa5d34c652b143725b0f1a5955c850ad6e767c47
     ros-lyrical-ros-gz \
     ros-lyrical-ros-gz-sim \
     ros-lyrical-simulation-interfaces \
