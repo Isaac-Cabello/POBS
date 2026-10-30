@@ -4,11 +4,13 @@ bno055:
     ros_topic_prefix: "pobs/"
     frame_id: "pobs_imu"
 
-    # Sensor communication (future hardware)
-    connection_type: "uart"
-    uart_port: "/dev/ttyUSB0"
-    uart_baudrate: 115200
-    uart_timeout: 0.1
+    # I2C connection
+    connection_type: "i2c"
+    i2c_bus: 1
+    i2c_addr: 40
+
+    # Bosch NDOF sensor fusion
+    operation_mode: 12
 
     # Data collection
     data_query_frequency: 50

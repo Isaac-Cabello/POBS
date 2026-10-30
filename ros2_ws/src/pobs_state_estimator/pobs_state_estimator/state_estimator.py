@@ -52,13 +52,23 @@ class StateEstimator(Node):
         self.orientation = None
         self.angular_velocity = None
         self.last_imu_stamp = None
-        self.world_acceleration = None
 
+        self.declare_parameter('imu_timeout_s',0.5)
+        self.declare_parameter('depth_timeout_s',1.0)
+        self.imu_timeout_s = float(self.get_parameter('imu_timeout_s').value)
+        self.depth_timeout_s = float(self.get_parameter('depth_timeout_s').value)
+        self.last_imu_receive_time = None
+        self.last_depth_receive_time = None
+
+        self.world_acceleration = None
         self.velocity_x = 0.0
         self.velocity_y = 0.0
         self.position_x = 0.0
         self.position_y = 0.0
         self.last_integration_stamp = None
+        self.declare_parameter('max_imu_dt_s',0.2)
+        self.max_imu_dt_s =float(self.get_parameter('max_imu_dt_s').value)
+
 
         self.imu_sub = self.create_subscription(
             Imu,
@@ -79,6 +89,12 @@ class StateEstimator(Node):
             10,
         )
         self.get_logger().info('Odometry publisher created')
+        self.imu_pub = self.create_publisher(
+            Imu,
+            '/state/imu',
+            10
+        )
+        self.get_logger().info('State IMU publisher created')
         self.timer = self.create_timer(
             1.0 / self.publish_rate,
             self.publish_odometry,
@@ -94,6 +110,23 @@ class StateEstimator(Node):
             self.get_logger().warning('IMU orientation unavailable  ')
             return
         self.orientation=(q.x/norm, q.y/norm, q.z/norm, q.w/norm )
+        self.last_imu_receive_time =self.get_clock().now()
+
+        state_imu = Imu()
+        state_imu.header = msg.header
+        state_imu.orientation.x = self.orientation[0]
+        state_imu.orientation.y = self.orientation[1]
+        state_imu.orientation.z = self.orientation[2]
+        state_imu.orientation.w = self.orientation[3]
+
+        state_imu.orientation_covariance =list(msg.orientation_covariance)
+        state_imu.angular_velocity = msg.angular_velocity
+        state_imu.angular_velocity_covariance = list(msg.angular_velocity_covariance)
+        state_imu.linear_acceleration = msg.linear_acceleration
+        state_imu.linear_acceleration_covariance = list(msg.linear_acceleration_covariance)
+
+        self.imu_pub.publish(state_imu)
+
         accel_body = (msg.linear_acceleration.x,
                         msg.linear_acceleration.y,
                         msg.linear_acceleration.z,)
@@ -122,6 +155,7 @@ class StateEstimator(Node):
         if self.last_integration_stamp is None:
             self.last_integration_stamp = stamp
             return
+        # gravity-comepnstaed h acc
         dt = stamp - self.last_integration_stamp
         if dt == 0.0: # duplicate imu timstamp
             return
@@ -134,7 +168,13 @@ class StateEstimator(Node):
             return
 
         self.last_integration_stamp = stamp
-
+        if dt > self.max_imu_dt_s:
+            self.get_logger().warning(
+                f'IMU timestamp gap detected: {dt:.3f}s. '
+                'Skipping integration.',
+                throttle_duration_sec=2.0
+            )
+            return
         #gravity compensated h acc
         ax = self.world_acceleration[0]
         ay = self.world_acceleration[1]
@@ -178,6 +218,7 @@ class StateEstimator(Node):
                 self.vertical_velocity_ms = 0.0
         self.depth_m = depth
         self.last_depth_stamp = stamp
+        self.last_depth_receive_time =self.get_clock().now()
         self.get_logger().info(
             f'Depth: {self.depth_m:.3f} m, '
             f'depth rate: {self.vertical_velocity_ms:.3f} m/s',
@@ -192,6 +233,21 @@ class StateEstimator(Node):
     )
         if(self.orientation is None or self.angular_velocity is None or self.depth_m is None):
             return
+
+        now = self.get_clock().now()
+        if(self.last_imu_receive_time is None or self.last_depth_receive_time is None):
+            return
+        imu_age = (now - self.last_imu_receive_time).nanoseconds * 1e-9
+        depth_age = (now-self.last_depth_receive_time).nanoseconds * 1e-9
+
+        if(imu_age <0.0 or depth_age < 0.0 or imu_age > self.imu_timeout_s or depth_age > self.depth_timeout_s):
+            self.get_logger().warning(
+                f'Sensor data stale: IMU={imu_age:.2f}s,'
+                f'depth={depth_age:.2f}s',
+                throttle_duration_sec=2.0
+            )
+            return
+
         odom = Odometry()
         odom.header.stamp = self.get_clock().now().to_msg()
         odom.header.frame_id = 'odom'
