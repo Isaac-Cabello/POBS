@@ -51,7 +51,7 @@ def _launch(context):
         parameters=[{'world_path': world_path, 'world_frame': frame,
                      'use_sim_time': sim_time}],
     )]
-    if sim_time:
+    if sim_time and _enabled(context, 'bridge_clock'):
         world_name = LaunchConfiguration('world_name').perform(context)
         actions.append(ExecuteProcess(
             cmd=[sys.executable, '-m', 'pobs_visualization.clock_bridge', world_name],
@@ -112,6 +112,8 @@ def generate_launch_description():
     arguments = {
         'state_estimation': 'true', 'point_cloud_mapping': 'true',
         'rviz': 'true', 'start_estimator': 'true', 'use_sim_time': 'true',
+        # The sensor bridge owns /clock. Enable only when running without it.
+        'bridge_clock': 'false',
         'publish_odom_transform': 'true', 'reset_settle_s': '0.25',
         'world_frame': 'lake', 'world_name': 'lake',
         'model_path': os.path.join(gazebo, 'models', 'pobs', 'model.sdf'),
