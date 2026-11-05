@@ -25,7 +25,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'esp_test_node = pobs_esp_test.esp_test_node:main'
+            'esp_test_node = pobs_esp_test.esp_test_node:main',
+            'esp_tcp_client = pobs_esp_test.esp_tcp_client:main',
         ],
     },
 )
