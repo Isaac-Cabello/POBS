@@ -1,0 +1,8 @@
+master_planner:
+  ros__parameters:
+    goal_tolerance_m: 0.20
+    settle_time_s: 1.0
+    odom_timeout_s: 1.0
+    require_calibration: true
+    fixed_z_m: -3.0  # unused for depth control; placeholder in output target
+    publish_rate_hz: 10.0
