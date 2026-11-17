@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 
 import time
@@ -70,6 +71,30 @@ def boolean(text):
     raise ValueError(f"Invalid boolean: {text!r}")
 
 
+def calculate_center_of_mass(links, body_from_model):
+    """Mass-weighted SDF COM, expressed in the base_link body frame."""
+    total_mass = 0.0
+    weighted_position = np.zeros(3)
+
+    for name, link in links.items():
+        inertial = link.find("inertial")
+        mass = float(inertial.findtext("mass", "1.0")) if inertial is not None else 1.0
+        if not np.isfinite(mass) or mass <= 0:
+            raise ValueError(f"{name}: invalid link mass {mass}")
+
+        body_from_link = body_from_model @ pose_matrix(link)
+        link_from_inertial = pose_matrix(inertial) if inertial is not None else np.eye(4)
+        com_position = (body_from_link @ link_from_inertial)[:3, 3]
+
+        total_mass += mass
+        weighted_position += mass * com_position
+
+    if total_mass <= 0:
+        raise ValueError("Model has no positive link mass")
+
+    return weighted_position / total_mass, total_mass
+
+
 def discover_thrusters(path, body_frame, force_cap):
     """Extract geometry from the direct-link POBS model structure."""
     root = ET.parse(path).getroot()
@@ -103,6 +128,7 @@ def discover_thrusters(path, body_frame, force_cap):
 
     # Plain link poses are relative to the model frame.
     body_from_model = np.linalg.inv(pose_matrix(links[body_frame]))
+    center_of_mass, total_mass = calculate_center_of_mass(links, body_from_model)
     thrusters = []
     used_joints = set()
     used_topics = set()
@@ -216,7 +242,7 @@ def discover_thrusters(path, body_frame, force_cap):
     if not thrusters:
         raise ValueError("No Gazebo Thruster plugins found")
 
-    return thrusters
+    return thrusters, center_of_mass, total_mass
 
 
 class ThrusterAllocator(Node):
@@ -269,7 +295,7 @@ class ThrusterAllocator(Node):
         if not path.is_file():
             raise ValueError(f"sdf_path is not a file: {path}")
 
-        self.thrusters = discover_thrusters(
+        self.thrusters, self.center_of_mass, self.total_mass = discover_thrusters(
             path, self.body_frame, force_cap
         )
         self.count = len(self.thrusters)
@@ -277,7 +303,8 @@ class ThrusterAllocator(Node):
         self.B = np.column_stack([
             np.concatenate((
                 t["direction"],
-                np.cross(t["position"], t["direction"]),
+                # Desired moments are about COM, not the base_link origin.
+                np.cross(t["position"] - self.center_of_mass, t["direction"]),
             ))
             for t in self.thrusters
         ])
@@ -323,6 +350,11 @@ class ThrusterAllocator(Node):
         rank = int(np.linalg.matrix_rank(active_B)) if len(self.active) else 0
         self.get_logger().info(f"Read {path.resolve()}")
         self.get_logger().info(
+            f"Total mass={self.total_mass:.6g} kg, "
+            f"COM in {self.body_frame}={self.center_of_mass.tolist()} m; "
+            "thruster moments referenced to COM"
+        )
+        self.get_logger().info(
             f"Discovered {self.count} thrusters; active rank={rank}/6"
         )
         self.get_logger().info(f"Allocation matrix:\n{self.B}")
@@ -330,6 +362,7 @@ class ThrusterAllocator(Node):
         for t in self.thrusters:
             self.get_logger().info(
                 f"{t['name']}: position={t['position'].tolist()}, "
+                f"arm_from_com={(t['position'] - self.center_of_mass).tolist()}, "
                 f"direction={t['direction'].tolist()}, "
                 f"limits=[{t['lower']}, {t['upper']}] N, "
                 f"topic={t['topic']}"
@@ -354,6 +387,7 @@ class ThrusterAllocator(Node):
         self.publish(np.zeros(self.count), np.zeros(6))
 
     def on_wrench(self, msg):
+        # The vector is expressed in body axes; its torque is about the COM.
         if msg.header.frame_id != self.body_frame:
             self.fail(
                 f"Expected frame {self.body_frame!r}, "
