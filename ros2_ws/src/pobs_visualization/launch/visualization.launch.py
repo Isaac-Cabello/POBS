@@ -13,6 +13,7 @@ from launch.substitutions import LaunchConfiguration
 
 from launch_ros.actions import Node
 
+from pobs_sonar.mounting import SONAR_MOUNTS
 from pobs_visualization.configuration import make_config, spawn_xy
 
 import yaml
@@ -37,8 +38,13 @@ def _remove_config(context, path):
 
 def _launch(context):
     state = _enabled(context, 'state_estimation')
-    mapping = _enabled(context, 'point_cloud_mapping')
+    footprints = _enabled(context, 'footprint_mapping')
+    points = _enabled(context, 'point_cloud_mapping') and not footprints
     sim_time = _enabled(context, 'use_sim_time')
+    # The sensor launcher also bridges /clock. Use one Gazebo clock for this
+    # view so interleaved deliveries cannot appear to rewind simulation time.
+    clock_topic = '/pobs/visualization/clock'
+    clock_remaps = [('/clock', clock_topic)] if sim_time else []
     frame = LaunchConfiguration('world_frame').perform(context)
     world_path = LaunchConfiguration('world_path').perform(context)
     show_rviz = _enabled(context, 'rviz')
@@ -48,13 +54,14 @@ def _launch(context):
     actions = [Node(
         package='pobs_visualization', executable='lake_reference_scene',
         name='lake_reference_scene', output='screen',
+        remappings=clock_remaps,
         parameters=[{'world_path': world_path, 'world_frame': frame,
                      'use_sim_time': sim_time}],
     )]
     if sim_time:
         world_name = LaunchConfiguration('world_name').perform(context)
         actions.append(ExecuteProcess(
-            cmd=[sys.executable, '-m', 'pobs_visualization.clock_bridge', world_name],
+            cmd=[sys.executable, '-m', 'pobs_visualization.clock_bridge', world_name, clock_topic],
             name='visualization_clock_bridge', output='screen',
         ))
     if state:
@@ -63,6 +70,7 @@ def _launch(context):
         actions.append(Node(
             package='pobs_visualization', executable='trajectory_comparison',
             name='trajectory_comparison', output='screen',
+            remappings=clock_remaps,
             parameters=[{
                 'use_sim_time': sim_time, 'world_frame': frame,
                 'publish_lake': False,
@@ -74,23 +82,38 @@ def _launch(context):
         if _enabled(context, 'start_estimator'):
             actions.append(Node(
                 package='pobs_state_estimator', executable='state_estimator',
-                parameters=[{'use_sim_time': sim_time}], output='screen',
+                parameters=[{'use_sim_time': sim_time}], remappings=clock_remaps, output='screen',
             ))
-    if mapping:
+    if footprints:
+        actions.append(ExecuteProcess(
+            name='sonar_beam_bridge',
+            cmd=[sys.executable, '-m', 'pobs_sonar.managed_bridge', *[
+                f'/pobs/sonar/sonar_{position}/beam/points'
+                '@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked'
+                for position in SONAR_MOUNTS
+            ], '--ros-args', '-r', '__node:=sonar_beam_bridge'], output='screen',
+        ))
+    if points or footprints:
+        mapper_parameters = {
+            'model_path': LaunchConfiguration('model_path').perform(context),
+            'world_frame': frame, 'use_sim_time': sim_time,
+            'mapping_method': 'footprints' if footprints else 'points',
+        }
+        cell_size = LaunchConfiguration('footprint_cell_size_m').perform(context)
+        if cell_size:
+            mapper_parameters['footprint_cell_size_m'] = float(cell_size)
         actions.append(Node(
             package='pobs_mapping', executable='point_cloud_mapper',
             name='point_cloud_mapper', output='screen',
-            parameters=[{
-                'model_path': LaunchConfiguration('model_path').perform(context),
-                'world_frame': frame, 'use_sim_time': sim_time,
-            }],
+            remappings=clock_remaps,
+            parameters=[mapper_parameters],
         ))
     if show_rviz:
-        config = make_config(state, mapping, frame)
-        if state:
-            config['Visualization Manager']['Views']['Current']['Distance'] = 30 if mapping else 25
-            config['Visualization Manager']['Views']['Current']['Focal Point'].update(
-                {'X': spawn_x, 'Y': spawn_y})
+        config = make_config(state, points, frame, footprint_mapping=footprints)
+        if state or footprints:
+            view = config['Visualization Manager']['Views']['Current']
+            view['Distance'] = 30 if points or footprints else 25
+            view['Focal Point'].update({'X': spawn_x, 'Y': spawn_y})
         handle, path = tempfile.mkstemp(prefix='pobs-', suffix='.rviz')
         with os.fdopen(handle, 'w') as stream:
             yaml.safe_dump(config, stream, sort_keys=False)
@@ -100,7 +123,7 @@ def _launch(context):
         ])))
         actions.append(Node(
             package='rviz2', executable='rviz2', arguments=['-d', path],
-            parameters=[{'use_sim_time': sim_time}], output='screen',
+            parameters=[{'use_sim_time': sim_time}], remappings=clock_remaps, output='screen',
         ))
     return actions
 
@@ -111,6 +134,7 @@ def generate_launch_description():
     gazebo = os.path.join(workspace, 'src', 'pobs_gazebo')
     arguments = {
         'state_estimation': 'true', 'point_cloud_mapping': 'true',
+        'footprint_mapping': 'false', 'footprint_cell_size_m': '',
         'rviz': 'true', 'start_estimator': 'true', 'use_sim_time': 'true',
         'publish_odom_transform': 'true', 'reset_settle_s': '0.25',
         'world_frame': 'lake', 'world_name': 'lake',

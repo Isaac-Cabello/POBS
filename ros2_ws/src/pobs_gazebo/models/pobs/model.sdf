@@ -241,6 +241,119 @@
           <noise><type>gaussian</type><mean>0</mean><stddev>0.01</stddev></noise>
         </lidar>
       </sensor>
+      <!-- Beam samples for the footprint mapper, at the existing sonar faces. -->
+      <sensor name="sonar_left_beam" type="gpu_lidar">
+        <pose>0.43 0.15 -0.02 0.0 0.7853981633974483 0.0</pose>
+        <topic>/pobs/sonar/sonar_left/beam</topic>
+        <update_rate>10</update_rate>
+        <always_on>true</always_on>
+        <visualize>false</visualize>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>17</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.13962634015954636</min_angle>
+              <max_angle>0.13962634015954636</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>17</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.13962634015954636</min_angle>
+              <max_angle>0.13962634015954636</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.05</min>
+            <max>6.0</max>
+            <resolution>0.001</resolution>
+          </range>
+        </lidar>
+      </sensor>
+      <sensor name="sonar_right_beam" type="gpu_lidar">
+        <pose>0.43 -0.15 -0.02 0.0 0.7853981633974483 0.0</pose>
+        <topic>/pobs/sonar/sonar_right/beam</topic>
+        <update_rate>10</update_rate>
+        <always_on>true</always_on>
+        <visualize>false</visualize>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>17</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.13962634015954636</min_angle>
+              <max_angle>0.13962634015954636</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>17</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.13962634015954636</min_angle>
+              <max_angle>0.13962634015954636</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.05</min>
+            <max>6.0</max>
+            <resolution>0.001</resolution>
+          </range>
+        </lidar>
+      </sensor>
+      <sensor name="sonar_middle_beam" type="gpu_lidar">
+        <pose>0.44 0.0 0.0 0.0 0.0000000000000000 0.0</pose>
+        <topic>/pobs/sonar/sonar_middle/beam</topic>
+        <update_rate>10</update_rate>
+        <always_on>true</always_on>
+        <visualize>false</visualize>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>17</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.13962634015954636</min_angle>
+              <max_angle>0.13962634015954636</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>17</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.13962634015954636</min_angle>
+              <max_angle>0.13962634015954636</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.05</min>
+            <max>6.0</max>
+            <resolution>0.001</resolution>
+          </range>
+        </lidar>
+      </sensor>
+      <sensor name="sonar_depth_beam" type="gpu_lidar">
+        <pose>0 0 -0.08 0 1.5707963267948966 0</pose>
+        <topic>/pobs/sonar/sonar_depth/beam</topic>
+        <update_rate>10</update_rate>
+        <always_on>true</always_on>
+        <visualize>false</visualize>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>17</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.13962634015954636</min_angle>
+              <max_angle>0.13962634015954636</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>17</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.13962634015954636</min_angle>
+              <max_angle>0.13962634015954636</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.15</min>
+            <max>30</max>
+            <resolution>0.01</resolution>
+          </range>
+        </lidar>
+      </sensor>
       <visual name="sonar_depth_housing">
         <pose>-0.000000000 0.0 -0.063000000 0 3.1415926535897931 0</pose>
         <geometry>

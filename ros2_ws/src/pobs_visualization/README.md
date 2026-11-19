@@ -7,31 +7,42 @@ Then use a second Ubuntu WSL host terminal (the host launcher handles Docker):
 ```bash
 pobs rviz                               # Both display groups
 pobs rviz point_cloud_mapping           # Mapper and mapping displays
+pobs rviz footprint_mapping             # Gazebo sonar elevation tiles
 pobs rviz state_estimation              # Estimated state display only
 pobs rvis point_cloud_mapping           # Alias
 pobs rviz point_cloud_mapping rviz:=false  # Mapper without a GUI
 ```
 
-Both `state_estimation` and `point_cloud_mapping` groups are always present in
-RViz and can be toggled in Displays. Tags choose which groups start enabled.
-Only an enabled mapping tag starts `pobs_mapping/point_cloud_mapper`.
-Enabling a display later in RViz does not start a disabled mapper.
+The tags choose which groups start enabled in RViz. A mapping tag starts
+`pobs_mapping/point_cloud_mapper` in the selected mode. Footprint mode takes
+precedence when both mapping tags are supplied. Enabling a display later in
+RViz only changes its visibility.
 
-The mapping group displays the entire accumulated `/pobs/mapping/points` cloud,
+The footprint group displays the full elevation map from
+`/pobs/mapping/footprints` as solid tiles colored by elevation. Lake terrain
+starts enabled and the grid starts hidden in this mode. Reference objects
+start hidden.
+
+The point cloud group displays the entire accumulated `/pobs/mapping/points` cloud,
 with no RViz decay, and `/pobs/mapping/ground_truth_pose`. Its fixed frame is
 `lake`. Mapping uses Gazebo truth exclusively, independent of estimated state.
 
 Every view also starts a reference scene publisher that registers `lake` in TF
-without needing the estimator. The `Lake reference` display shows a translucent
+without needing the estimator. The `Lake reference` display shows a colored
 copy of the terrain loaded from the actual world SDF and OBJ geometry. The water
 surface is available as a separate display, initially disabled to keep the
 underwater points visible. These reference surfaces are simulation geometry;
 the `Accumulated sonar map` display contains the measured sonar points.
-The **Sonar test objects** display shows the three boulders and wall read from
-the world's included `sonar_targets` model, using the same poses and meshes as
-Gazebo. It can be toggled independently of the reference terrain.
+The **Sonar test objects** display shows calibration objects when the optional
+`sonar_targets` model is included in the world, using Gazebo's poses and meshes.
+The default lake uses continuous natural bathymetry and has no calibration props.
 
-Sonar hits and terrain use a fixed blue depth scale: pale blue at the water
+RViz starts with a light gray background. The reference terrain uses Gazebo's
+elevation palette: deep blue in the channel and basin, teal and green across
+slopes, and sand to pale pink near and above the shoreline. The palette spans
+z=-15 to z=4 m and is stored in the lake model's `materials/elevation_palette.json`.
+
+Sonar hits use a fixed blue depth scale: pale blue at the water
 surface (z=0), dark blue at 10 m depth (z=-10). Values outside this interval
 use the nearest endpoint color. Colors represent depth below water, rather
 than distance along a sonar beam or sensor identity. The cloud uses RViz's

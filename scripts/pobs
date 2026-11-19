@@ -21,7 +21,8 @@ Usage: pobs COMMAND
   bridge              Bridge sensors and publish depth/pressure (foreground)
   sensors [ARGS]      Start all four sonars and existing sensors (simulation default)
   shell               Open a ROS/Gazebo shell in the simulator
-  rviz [TAGS] [ARGS]   Open selected state_estimation / point_cloud_mapping displays
+  rviz [TAGS] [ARGS]   Open state_estimation, point_cloud_mapping, or footprint_mapping
+  survey [ARGS]      Move the Gazebo robot in a lake-wide sonar survey
   rvis                Alias for pobs rviz
   compare             Run the estimator, path comparison, and configured RViz
   build               Install dependencies and build workspace packages in the simulator
@@ -42,6 +43,8 @@ EOF
     echo '  pobs build'
     echo '  pobs sensors source:=simulation'
     echo '  pobs rviz point_cloud_mapping'
+    echo '  pobs rviz footprint_mapping'
+    echo '  pobs survey --bounds -16 -7 -13 -5'
     echo '  pobs rviz state_estimation point_cloud_mapping start_estimator:=true'
 }
 
@@ -189,6 +192,11 @@ case "${1:-help}" in
         need_sim
         shift
         exec bash "$0" rviz state_estimation "$@"
+        ;;
+    survey)
+        need_sim
+        shift
+        exec_args_in_sim python3 /home/ros/ros2_ws/scripts/survey_lake.py "$@"
         ;;
     build)
         need_sim

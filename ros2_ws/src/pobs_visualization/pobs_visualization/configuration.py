@@ -3,12 +3,9 @@
 import xml.etree.ElementTree as ET
 
 
-# Water level is z=0 in lake.sdf. Keep a fixed depth scale for both the
-# measured cloud and reference terrain; new hits must not recolor old points.
-DEPTH_MIN_Z = -10.0
-DEPTH_MAX_Z = 0.0
-DEPTH_DEEP_RGB = (32, 80, 160)
-DEPTH_SHALLOW_RGB = (185, 225, 255)
+from pobs_mapping.elevation_color import (
+    DEPTH_DEEP_RGB, DEPTH_MAX_Z, DEPTH_MIN_Z, DEPTH_SHALLOW_RGB,
+)
 
 
 def spawn_xy(world_path, model_name='pobs'):
@@ -36,14 +33,16 @@ def topic(name, transient=False):
     }
 
 
-def make_config(state_estimation=True, point_cloud_mapping=True, world_frame='lake'):
-    """Create both named groups, enabling only the requested displays."""
+def make_config(state_estimation=True, point_cloud_mapping=True, world_frame='lake',
+                *, footprint_mapping=False):
+    """Build the requested RViz display groups."""
     return {
         'Panels': [{'Class': 'rviz_common/Displays', 'Name': 'Displays'}],
         'Window Geometry': {'Width': 1200, 'Height': 850},
         'Visualization Manager': {
             'Class': '',
-            'Global Options': {'Fixed Frame': world_frame, 'Frame Rate': 30},
+            'Global Options': {'Fixed Frame': world_frame, 'Frame Rate': 30,
+                               'Background Color': '238; 242; 243'},
             # Loading a custom config without Tools leaves the viewport with
             # no active mouse handler, even when its Orbit view is configured.
             # The first tool becomes active when RViz loads the configuration.
@@ -56,7 +55,8 @@ def make_config(state_estimation=True, point_cloud_mapping=True, world_frame='la
             ],
             'Displays': [
                 {'Class': 'rviz_default_plugins/Grid', 'Name': 'Grid',
-                 'Enabled': True, 'Cell Size': 5, 'Plane Cell Count': 40, 'Alpha': 0.2},
+                 'Enabled': not footprint_mapping, 'Cell Size': 5,
+                 'Plane Cell Count': 40, 'Alpha': 0.2},
                 {'Class': 'rviz_common/Group', 'Name': 'Lake reference',
                  'Enabled': True, 'Displays': [
                      {'Class': 'rviz_default_plugins/Marker', 'Name': 'Lake terrain',
@@ -66,7 +66,7 @@ def make_config(state_estimation=True, point_cloud_mapping=True, world_frame='la
                       'Enabled': False,
                       'Topic': topic('/pobs/visualization/lake_water', transient=True)},
                      {'Class': 'rviz_default_plugins/MarkerArray', 'Name': 'Sonar test objects',
-                      'Enabled': True,
+                      'Enabled': not footprint_mapping,
                       'Topic': topic('/pobs/visualization/lake_obstacles', transient=True)},
                  ]},
                 {'Class': 'rviz_common/Group', 'Name': 'state_estimation',
@@ -101,6 +101,15 @@ def make_config(state_estimation=True, point_cloud_mapping=True, world_frame='la
                       'Min Intensity': DEPTH_MIN_Z, 'Max Intensity': DEPTH_MAX_Z,
                       'Min Color': '; '.join(map(str, DEPTH_DEEP_RGB)),
                       'Max Color': '; '.join(map(str, DEPTH_SHALLOW_RGB))},
+                     {'Class': 'rviz_default_plugins/Pose', 'Name': 'Ground truth robot pose',
+                      'Enabled': True, 'Topic': topic('/pobs/mapping/ground_truth_pose'),
+                      'Shape': 'Arrow', 'Color': '0; 255; 0'},
+                 ]},
+                {'Class': 'rviz_common/Group', 'Name': 'footprint_mapping',
+                 'Enabled': footprint_mapping, 'Displays': [
+                     {'Class': 'rviz_default_plugins/Marker',
+                      'Name': 'Sonar elevation tiles', 'Enabled': True,
+                      'Topic': topic('/pobs/mapping/footprints', transient=True)},
                      {'Class': 'rviz_default_plugins/Pose', 'Name': 'Ground truth robot pose',
                       'Enabled': True, 'Topic': topic('/pobs/mapping/ground_truth_pose'),
                       'Shape': 'Arrow', 'Color': '0; 255; 0'},

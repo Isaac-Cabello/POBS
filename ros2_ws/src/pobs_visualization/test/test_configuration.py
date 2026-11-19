@@ -13,6 +13,7 @@ def test_groups_independently_toggle_and_use_truth_for_mapping():
     mapping = groups['point_cloud_mapping']
     assert mapping['Enabled']
     assert manager['Global Options']['Fixed Frame'] == 'lake'
+    assert manager['Global Options']['Background Color'] == '238; 242; 243'
     cloud, pose = mapping['Displays']
     assert cloud['Topic']['Value'] == '/pobs/mapping/points'
     assert cloud['Topic']['Durability Policy'] == 'Transient Local'
@@ -78,3 +79,17 @@ def test_state_view_restores_green_truth_and_orange_estimated_trails():
     assert estimate['Topic']['Value'] == '/visualization/estimated_path'
     assert estimate['Color'] == '255; 150; 50'
     assert pose['Topic']['Value'] == '/model/pobs/pose'
+
+
+def test_footprint_mode_displays_latched_elevation_tiles():
+    manager = make_config(False, False, footprint_mapping=True)['Visualization Manager']
+    groups = {display['Name']: display for display in manager['Displays']}
+    assert not groups['point_cloud_mapping']['Enabled']
+    assert groups['Lake reference']['Displays'][0]['Enabled']
+    assert not groups['Grid']['Enabled']
+    footprints = groups['footprint_mapping']
+    assert footprints['Enabled']
+    tiles, _ = footprints['Displays']
+    assert tiles['Class'] == 'rviz_default_plugins/Marker'
+    assert tiles['Topic']['Value'] == '/pobs/mapping/footprints'
+    assert tiles['Topic']['Durability Policy'] == 'Transient Local'

@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import numpy as np
-from pobs_visualization.scene import lake_geometry, obj_triangles
+from pobs_visualization.scene import lake_geometry, obj_triangles, terrain_colors
 import pytest
 
 
@@ -47,7 +47,17 @@ def test_repository_terrain_contains_real_lake_depth_and_water_level():
     np.testing.assert_allclose(geometry['water_surface'][:, 2], 0)
     objects = {name: points for name, points in geometry.items()
                if name.startswith('sonar_targets/')}
-    assert len(objects) == 4
-    wall = objects['sonar_targets/wall/wall']
-    np.testing.assert_allclose(wall.max(axis=0) - wall.min(axis=0), [0.4, 6, 4.5])
-    np.testing.assert_allclose(wall[:, 0].min(), -7.0)
+    assert not objects  # Default lake is continuous bathymetry, without calibration props.
+
+
+def test_reference_terrain_matches_gazebo_palette():
+    import json
+
+    world = Path(__file__).resolve().parents[2] / 'pobs_gazebo/worlds/lake.sdf'
+    if not world.exists():
+        pytest.skip('Source Gazebo package not installed beside visualization')
+    palette = json.loads((world.parent.parent
+                          / 'models/lake_terrain/materials/elevation_palette.json').read_text())
+    stops = np.asarray(palette['stops'], dtype=float)
+    np.testing.assert_allclose(terrain_colors(stops[:, 0], world), stops[:, 1:] / 255)
+    np.testing.assert_allclose(terrain_colors([-100, 100], world), stops[[0, -1], 1:] / 255)

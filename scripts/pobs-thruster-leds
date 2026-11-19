@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+# Run on the Pi after `pobs sim`. Optional arguments: container and serial port.
+set -euo pipefail
+
+docker_cmd=(docker)
+if ! docker info >/dev/null 2>&1; then
+    docker_cmd=(sudo docker)
+    "${docker_cmd[@]}" info >/dev/null
+fi
+
+container=${1:-${POBS_CONTAINER:-}}
+if [[ -z "$container" ]]; then
+    for candidate in pobs-pi pobs-lake; do
+        if [[ $("${docker_cmd[@]}" inspect -f '{{.State.Running}}' "$candidate" 2>/dev/null || true) == true ]]; then
+            if [[ -n "$container" ]]; then
+                echo 'Both POBS containers are running. Pass the simulator container name.' >&2
+                exit 1
+            fi
+            container=$candidate
+        fi
+    done
+fi
+if [[ -z "$container" ]]; then
+    echo 'No POBS simulator container found. Run pobs sim first.' >&2
+    exit 1
+fi
+
+python_code=$(cat <<'PY'
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import time
+
+import rclpy
+from ament_index_python.packages import get_package_prefix
+from pobs_stabilizer.thruster_allocator import discover_thrusters
+
+
+def executable(package, name):
+    return str(Path(get_package_prefix(package)) / 'lib' / package / name)
+
+
+def main(port):
+    workspace = Path('/home/ros/ros2_ws')
+    model = workspace / 'src/pobs_gazebo/models/pobs/model.sdf'
+    thrusters = discover_thrusters(model, 'base_link', 10.0)
+    gz_topics = subprocess.check_output(['gz', 'topic', '-l'], text=True, timeout=10)
+    if '/pobs/imu' not in gz_topics.splitlines():
+        raise RuntimeError('Gazebo IMU topic is missing. Start the POBS lake with pobs sim first.')
+
+    processes = {}
+
+    def start(name, command):
+        print(f'Starting {name}', flush=True)
+        processes[name] = subprocess.Popen(command, start_new_session=True)
+
+    rclpy.init(args=[])
+    graph = rclpy.create_node('pobs_led_launcher')
+    try:
+        until = time.monotonic() + 2.0
+        while time.monotonic() < until:
+            rclpy.spin_once(graph, timeout_sec=0.1)
+        nodes = {name for name, _ in graph.get_node_names_and_namespaces()}
+        if 'esp_test_node' in nodes:
+            raise RuntimeError('An ESP32 LED node is already running. Stop it before starting another.')
+        if not os.access(port, os.R_OK | os.W_OK):
+            raise RuntimeError(f'Cannot access {port}. Map the ESP32 USB serial device into this container and grant the ros user access.')
+        led_executable = executable('pobs_esp_test', 'esp_test_node')
+        if not Path(led_executable).is_file():
+            raise RuntimeError('Build pobs_esp_test in the Pi workspace before launching the LEDs.')
+
+        sensor_specs = {
+            '/clock': 'rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+            '/pobs/imu': 'sensor_msgs/msg/Imu[gz.msgs.IMU',
+            '/model/pobs/pose': 'geometry_msgs/msg/PoseStamped[gz.msgs.Pose',
+        }
+        bridge = executable('ros_gz_bridge', 'parameter_bridge')
+        missing = [f'{topic}@{spec}' for topic, spec in sensor_specs.items()
+                   if not graph.count_publishers(topic)]
+        if missing:
+            start('sensor bridge', [bridge, *missing, '--ros-args', '-r', '__node:=pobs_led_sensor_bridge'])
+        if not graph.count_publishers('/pobs/depth'):
+            start('depth publisher', [sys.executable, str(workspace / 'scripts/pobs_depth_sensor.py')])
+        if 'state_estimator' not in nodes:
+            start('state estimator', [executable('pobs_state_estimator', 'state_estimator'),
+                                      '--ros-args', '-p', 'use_sim_time:=true'])
+        if 'pobs_stabilizer' not in nodes:
+            start('stabilizer', [executable('pobs_stabilizer', 'stabilizer'),
+                                 '--ros-args', '-p', 'use_sim_time:=true'])
+        if 'thruster_allocator' not in nodes:
+            start('thruster allocator', [executable('pobs_stabilizer', 'thruster_allocator'),
+                                         '--ros-args', '-p', f'sdf_path:={model}', '-p', 'force_cap:=10.0'])
+        missing = [t['topic'] + '@std_msgs/msg/Float64]gz.msgs.Double'
+                   for t in thrusters if not any(
+                       'bridge' in endpoint.node_name
+                       for endpoint in graph.get_subscriptions_info_by_topic(t['topic']))]
+        if missing:
+            start('thrust bridge', [bridge, *missing, '--ros-args', '-r', '__node:=pobs_led_thrust_bridge'])
+        start('ESP32 LEDs', [led_executable, '--ros-args', '-p', 'serial_enabled:=true',
+                             '-p', f'serial_port:={port}'])
+        print('Ctrl+C stops these nodes and leaves Gazebo running.', flush=True)
+
+        while rclpy.ok():
+            for name, process in processes.items():
+                if process.poll() is not None:
+                    raise RuntimeError(f'{name} exited with status {process.returncode}. See its output above.')
+            rclpy.spin_once(graph, timeout_sec=0.25)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        for process in processes.values():
+            if process.poll() is None:
+                process.send_signal(signal.SIGINT)
+        for process in processes.values():
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+        graph.destroy_node()
+        rclpy.try_shutdown()
+
+
+try:
+    main(sys.argv[1])
+except (RuntimeError, LookupError, OSError, subprocess.SubprocessError) as exc:
+    sys.exit(str(exc))
+PY
+)
+
+terminal=(-i)
+if [[ -t 0 && -t 1 ]]; then
+    terminal=(-it)
+fi
+exec "${docker_cmd[@]}" exec "${terminal[@]}" -u ros -e HOME=/home/ros "$container" \
+    bash -c 'source /opt/ros/lyrical/setup.bash && source /home/ros/ros2_ws/install/setup.bash && exec python3 -c "$1" "$2"' \
+    pobs-thruster-leds "$python_code" "${2:-/dev/ttyUSB0}"

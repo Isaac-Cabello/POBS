@@ -20,10 +20,11 @@ The project runs ROS 2 and Gazebo in a Docker container based on Ubuntu 26.04. T
 - `2-wheeled_bot`, a simple two-wheeled differential-drive robot
 - Windows + WSLg GUI support through `compose.gui-wslg.yaml`
 
-The lake includes repeatable seabed roughness, mounds, a trench, three boulders,
-and a forward sonar test wall. See [terrain controls and reload commands](
-ros2_ws/src/pobs_gazebo/TERRAIN.md). The test-area spawn is 2.5 m above the bottom
-so all four sonar beams can produce returns at the initial pose.
+The lake includes a winding underwater channel, a deep basin, a rocky ridge,
+a broad shelf and a sediment fan, all sculpted into the lakebed mesh. See
+[terrain controls and reload commands](ros2_ws/src/pobs_gazebo/TERRAIN.md).
+The test-area spawn is 2.5 m above the bottom. Calibration boulders and a wall
+remain available as optional sonar fixtures.
 
 The host launcher in `scripts/pobs` runs Docker commands for you. From the
 repository root in Ubuntu WSL, install or update it with:
@@ -40,7 +41,7 @@ depth/pressure publisher. The host command defaults to simulation and detects
 an already-running legacy bridge. Use `source:=hardware` for UART sensors.
 See the driver documentation for serial ports and mount poses.
 
-## Accumulated sonar map in RViz
+## Sonar mapping in RViz
 
 Run these commands on the Ubuntu WSL host. Restart an older simulator once to
 load the new sensor mounts; `pobs stop` ends its current simulation:
@@ -55,24 +56,53 @@ pobs sensors source:=simulation
 Keep the sensor command running. In another Ubuntu WSL host terminal:
 
 ```bash
+pobs rviz footprint_mapping
 pobs rviz point_cloud_mapping
 pobs rviz state_estimation point_cloud_mapping
 ```
 
 The `pobs rvis` spelling is also accepted. Tags select the initially enabled
-RViz groups; both groups remain available in Displays. Selecting state estimation
+RViz groups. Selecting state estimation
 starts the estimator and restores the green ground-truth and orange estimated
 trails. Use `start_estimator:=false` with an external estimator; the host launcher
 also detects the standard estimator executable. `pobs compare` selects the
 state-estimation view. See [compatibility notes](COMPATIBILITY.md) for behavior
 retained from earlier development.
 
-The mapper uses `/model/pobs/pose` exclusively, never the estimator. Every
-accepted sonar hit is kept for the current run and published in the full
-`/pobs/mapping/points` cloud. Reopening RViz receives the current complete map.
-Simulation resets or the clear service empty it; no old map points expire.
+The mapper uses `/model/pobs/pose`. Footprint mode uses all four simulated
+sonars to paint elevation tiles, with newer readings replacing overlapping
+cells. The point cloud mode publishes each accepted centerline hit to
+`/pobs/mapping/points`. Reopening RViz receives the current map. A simulation
+reset or the clear service empties the map.
 See [mapper details](ros2_ws/src/pobs_mapping/README.md) and
 [visualization options](ros2_ws/src/pobs_visualization/README.md).
+
+### Survey the lake automatically
+
+With Gazebo and the sensor bridge running, open the footprint map on the
+Ubuntu WSL host. The default grid uses 1 m squares.
+
+```bash
+pobs rviz footprint_mapping
+```
+
+From a separate terminal, try the area around the spawn first.
+
+```bash
+pobs survey --bounds -16 -7 -13 -5
+```
+
+Run `pobs survey --fast` for a quicker full-lake preview with wider lanes.
+Run `pobs survey` for a denser pass, or add `--dry-run` to either mode for
+the route size and estimated simulation time. The script sets the Gazebo pose
+20 times per simulation second in back-and-forth lanes. It follows the
+terrain 3.5 m above the floor where depth permits. The terrain mesh guides the
+robot's path. RViz still maps the simulated sonar returns, so very shallow
+edges and areas hidden from the sonar can have gaps. Use `Ctrl+C` to stop the
+survey and leave the current map in RViz.
+
+If your installed host `pobs` command predates `survey`, reinstall it with
+`install -Dm755 scripts/pobs ~/.local/bin/pobs` from the repository.
 
 To restart a run without closing Gazebo, the sensors, or RViz, use the existing
 host command:

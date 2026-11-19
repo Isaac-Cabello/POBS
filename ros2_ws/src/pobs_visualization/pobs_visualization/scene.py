@@ -1,5 +1,6 @@
 """Publish the lake's reference geometry and register its fixed frame in TF."""
 
+import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -125,6 +126,15 @@ def lake_geometry(world_path):
     return result
 
 
+def terrain_colors(heights, world_path):
+    """Use the same elevation palette as Gazebo's terrain texture."""
+    path = (Path(world_path).parent.parent / 'models/lake_terrain/materials'
+            / 'elevation_palette.json')
+    stops = np.asarray(json.loads(path.read_text())['stops'], dtype=float)
+    return np.column_stack([np.interp(heights, stops[:, 0], stops[:, channel])
+                            for channel in (1, 2, 3)]) / 255.0
+
+
 def main(args=None):
     """Retain lake reference markers for RViz subscribers joining at any time."""
     from geometry_msgs.msg import Point, TransformStamped
@@ -171,11 +181,15 @@ def main(args=None):
             marker.scale.x = marker.scale.y = marker.scale.z = 1.0
             marker.color.r, marker.color.g, marker.color.b = \
                 (0.02, 0.28, 0.7) if water else (0.55, 0.62, 0.35)
-            alpha = 0.65 if obstacle else 0.35
+            alpha = 0.65 if obstacle else 1.0
             marker.color.a = 0.15 if water else alpha
             marker.points = [Point(x=float(x), y=float(y), z=float(z))
                              for x, y, z in points]
-            if not water:
+            if not water and not obstacle:
+                colors = terrain_colors(points[:, 2], node.get_parameter('world_path').value)
+                marker.colors = [ColorRGBA(r=float(r), g=float(g), b=float(b), a=alpha)
+                                 for r, g, b in colors]
+            elif obstacle:
                 # Depth colors expose the bowl and shoreline without an opaque
                 # water surface hiding the sonar points beneath it.
                 fraction = (DEPTH_MAX_Z - points[:, 2]) / (DEPTH_MAX_Z - DEPTH_MIN_Z)

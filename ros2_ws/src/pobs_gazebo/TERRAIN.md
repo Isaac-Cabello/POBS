@@ -1,29 +1,30 @@
-# Lake mapping test area
+# Natural lake bathymetry
 
-The default lake now loads `models/lake_terrain/meshes/terrain_bumpy.obj` for
-both its visual and collision mesh. The original `terrain.obj` is the baseline
-and remains unchanged. Bumps are smooth, fade out near the shoreline, and use
-seed 42. Three larger mounds and a shallow trench sit near the mapping area.
-The water surface stays at z=0.
+The default lake uses connected landforms sculpted into
+`models/lake_terrain/meshes/terrain_bumpy.obj`, with identical visual and
+collision geometry. This is synthetic terrain, not a measured real-world lake.
+The original `terrain.obj`, shoreline, above-water land and water at z=0 remain
+unchanged.
 
-`models/sonar_targets/model.sdf` contains three irregular boulders and a wall.
-Each has matching visual and collision geometry. Their heights are calculated
-from the generated terrain; the bases extend slightly into it. Objects are
-static, so they remain fixed when the world runs or resets.
+The visual mesh has elevation texture coordinates and a generated color ramp
+in `materials/elevation.png`. Deep areas are blue, slopes teal and green, and
+the shoreline sandy, matching the terrain preview. Both Gazebo and the RViz
+reference surface use `materials/elevation_palette.json` over z=-15 to z=4 m.
+Regeneration rebuilds the texture and coordinates; the collision surface is
+unchanged. Water is highly transparent so the colors remain visible.
 
-The robot starts at (-12, -8, -6.314902), 2.5 m above its local bottom. The
-forward wall is centered at (-6.8, -8), 6 m wide and 4.5 m tall. At the initial
-level pose, the expected ranges are approximately:
+- A winding drowned river channel crosses the lake west to east, with a
+  4–7 m characteristic width and about 3.4 m of incision.
+- A broad southwestern basin adds about 2.4 m of depth.
+- An uneven northern ridge rises about 4–5 m, with a steep southern face and
+  a gentler back slope.
+- A northern shelf has a curved drop-off and about 3.5 m of relief.
+- An eastern sediment fan spreads over roughly 24 by 18 m at the channel mouth.
 
-| Sonar | Closest range |
-| --- | --- |
-| Left | 2.64 m |
-| Right | 2.84 m |
-| Middle | 4.56 m (wall) |
-| Downward | 2.42 m |
-
-The free vehicle will move under physics after startup; these are initial-pose
-references, not fixed sensor outputs or a depth-hold controller.
+Features blend into the existing bed and fade smoothly near shore. Small seeded
+roughness adds surface variation. There are no freestanding primitive obstacles
+in either default lake world. The robot starts at (-12, -8, -9.032295), 2.5 m above
+the local bottom; forward returns now depend on the terrain and vehicle pose.
 
 ## Regenerate
 
@@ -40,12 +41,29 @@ python3 ~/ros2_ws/scripts/generate_lake_terrain.py \
   --seed 42 --roughness 0.35 --feature-scale 1.0
 ```
 
-`roughness` controls the small smooth variations in meters. `feature-scale`
-scales the mound and trench heights. The script also regenerates and grounds
-the boulders and wall, recalculates mesh normals, and prints a recommended
-robot spawn 2.5 m above the bottom. It does not edit the world spawn for you;
-update `worlds/lake.sdf` if a changed terrain needs a different starting height.
-Repeating the same command produces identical assets without stacking bumps.
+`roughness` controls small smooth variations in meters. `feature-scale` scales
+large landforms. Both at zero restore the baseline. Repeating a command produces
+identical assets without stacking deformations. Normals are recomputed, and
+submerged features stay at least 0.8 m below water.
+
+The script prints a recommended robot spawn 2.5 m above the generated bed.
+After changing controls, update the robot pose in **both** `worlds/lake.sdf` and
+`worlds/lake_cad.sdf` using that value; generation does not edit world files.
+
+## Optional sonar calibration targets
+
+Generation also grounds three boulders and a rectangular wall in
+`models/sonar_targets/model.sdf`, with matching visual and collision geometry.
+To use these artificial targets, add this include under `<world>` in the desired
+lake world, then reload:
+
+```xml
+<include>
+  <uri>model://sonar_targets</uri>
+  <name>sonar_targets</name>
+  <pose>0 0 0 0 0 0</pose>
+</include>
+```
 
 ## Reload and view
 
@@ -54,21 +72,22 @@ Geometry changes require a full reload. On the Ubuntu WSL host:
 ```bash
 pobs stop
 pobs sim
-pobs build
-pobs sensors source:=simulation
 ```
 
-In another WSL terminal:
+In another WSL terminal, build installed reference assets and start the view:
 
 ```bash
+pobs build
 pobs rviz point_cloud_mapping
 ```
 
-Under **Lake reference**, terrain, water and **Sonar test objects** have separate
-visibility controls. The terrain and objects are reference geometry; the
-accumulated sonar map still uses only measured ranges and Gazebo truth. Both
-use the fixed blue depth palette. Move the vehicle to sample more surfaces;
-four stationary beams do not produce a dense map of the whole lake.
+Under **Lake reference**, enable **Lake terrain** to inspect the complete
+surface. Water has a separate visibility control. **Sonar test objects** is
+empty unless the optional fixtures are included. Reference surfaces are known
+simulation geometry; the sonar map still uses only measured ranges and Gazebo
+truth. Measured sonar data retains its blue depth palette, which saturates below
+10 m; the reference terrain palette distinguishes depths down to 15 m.
 
-For subsequent runs, `pobs reset` resets the loaded world without closing its
-nodes or windows. It does not reload mesh or SDF edits.
+Move or survey the vehicle to sample the features. Four stationary beams do
+not produce a dense map of the whole lake. `pobs reset` resets the loaded world
+without reloading mesh or SDF edits.

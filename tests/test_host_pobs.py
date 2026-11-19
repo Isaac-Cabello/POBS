@@ -56,10 +56,11 @@ def test_sensors_skips_existing_bridge_and_preserves_explicit_source(host):
     assert command[-3:] == ['sensors', 'source:=hardware', 'existing_sensors:=false']
 
 
-def test_rviz_tags_and_arguments_are_forwarded_as_separate_arguments(host):
-    command = host('rvis', 'point_cloud_mapping', 'world_frame:=lake',
+@pytest.mark.parametrize('mapping', ['point_cloud_mapping', 'footprint_mapping'])
+def test_rviz_tags_and_arguments_are_forwarded_as_separate_arguments(host, mapping):
+    command = host('rvis', mapping, 'world_frame:=lake',
                    'model_path:=/a directory/model.sdf')[-1]
-    assert command[-4:] == ['rviz', 'point_cloud_mapping', 'world_frame:=lake',
+    assert command[-4:] == ['rviz', mapping, 'world_frame:=lake',
                             'model_path:=/a directory/model.sdf']
     assert 'exec "$@"' in command[command.index('-lc') + 1]
 
@@ -68,6 +69,14 @@ def test_legacy_sonar_command_reads_downward_range_topic(host):
     command = host('sonar', '--watch')[-1]
     assert '/pobs/sonar/sonar_depth/range' in command
     assert '--once' not in command
+
+
+def test_survey_forwards_bounds_to_gazebo_script(host):
+    command = host('survey', '--bounds', '-16', '-7', '-13', '-5', '--dry-run')[-1]
+    assert command[-8:] == [
+        'python3', '/home/ros/ros2_ws/scripts/survey_lake.py',
+        '--bounds', '-16', '-7', '-13', '-5', '--dry-run',
+    ]
 
 
 def test_compare_routes_to_restored_state_view_and_forwards_overrides(host):

@@ -3,8 +3,8 @@
   <world name="lake">
     <gravity>0 0 -9.81</gravity>
     <physics name="physics" type="ignored">
-      <max_step_size>0.001</max_step_size>
-      <real_time_factor>1</real_time_factor>
+      <max_step_size>0.05</max_step_size>
+      <real_time_factor>10</real_time_factor>
     </physics>
     <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics" />
     <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands" />
@@ -57,15 +57,10 @@
       <pose>0 0 0 0 0 0</pose>
     </include>
     <include>
-      <uri>model://sonar_targets</uri>
-      <name>sonar_targets</name>
-      <pose>0 0 0 0 0 0</pose>
-    </include>
-    <include>
       <uri>model://pobs</uri>
       <name>pobs</name>
       <!-- Start 2.5 m above the local bottom, within the angled sonar range. -->
-      <pose>-12 -8 -6.314902 0 0 0</pose>
+      <pose>-12 -8 -9.032295 0 0 0</pose>
     </include>
     <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu" />
     <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">

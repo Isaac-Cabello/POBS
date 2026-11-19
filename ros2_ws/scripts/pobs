@@ -5,7 +5,7 @@ set -eo pipefail
 usage() {
   cat <<'HELP'
 Usage: pobs sensors [name:=value ...]
-       pobs rviz [state_estimation] [point_cloud_mapping] [name:=value ...]
+       pobs rviz [state_estimation] [point_cloud_mapping|footprint_mapping] [name:=value ...]
 
 Start all sensor publishers (Gazebo must already be running for existing sensors):
   /pobs/imu, /pobs/depth, /pobs/pressure
@@ -23,6 +23,7 @@ Set POBS_WORKSPACE to override the default ~/ros2_ws source workspace.
 
 RViz defaults to both display groups. Specify tags to select initial groups.
   pobs rviz point_cloud_mapping
+  pobs rviz footprint_mapping         # Elevation tiles from all four Gazebo sonars
   pobs rviz state_estimation          # Estimator + green/orange trails
   pobs rviz state_estimation start_estimator:=false  # Existing estimator
   pobs rviz point_cloud_mapping rviz:=false
@@ -41,17 +42,20 @@ LAUNCH_ARGS=()
 if [[ "$COMMAND" == rviz ]]; then
   STATE=false
   MAPPING=false
+  FOOTPRINTS=false
   TAGS=0
   for ARG in "$@"; do
     case "$ARG" in
       state_estimation) STATE=true; TAGS=1 ;;
       point_cloud_mapping) MAPPING=true; TAGS=1 ;;
+      footprint_mapping) FOOTPRINTS=true; TAGS=1 ;;
       *:=*) LAUNCH_ARGS+=("$ARG") ;;
       *) echo "Unknown RViz tag: $ARG" >&2; usage >&2; exit 2 ;;
     esac
   done
   if [[ "$TAGS" == 0 ]]; then STATE=true; MAPPING=true; fi
-  LAUNCH_ARGS=("state_estimation:=$STATE" "point_cloud_mapping:=$MAPPING" "${LAUNCH_ARGS[@]}")
+  LAUNCH_ARGS=("state_estimation:=$STATE" "point_cloud_mapping:=$MAPPING"
+               "footprint_mapping:=$FOOTPRINTS" "${LAUNCH_ARGS[@]}")
 fi
 
 WORKSPACE_DIR="${POBS_WORKSPACE:-$HOME/ros2_ws}"

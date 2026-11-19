@@ -17,8 +17,16 @@
           </mesh>
         </geometry>
         <material>
-          <ambient>0.32 0.38 0.20 1</ambient>
-          <diffuse>0.32 0.38 0.20 1</diffuse>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+          <specular>0 0 0 1</specular>
+          <pbr>
+            <metal>
+              <albedo_map>model://lake_terrain/materials/elevation.png</albedo_map>
+              <metalness>0</metalness>
+              <roughness>1</roughness>
+            </metal>
+          </pbr>
         </material>
       </visual>
       <visual name="water_surface">
@@ -27,7 +35,7 @@
             <uri>model://lake_terrain/meshes/water.obj</uri>
           </mesh>
         </geometry>
-        <transparency>0.6</transparency>
+        <transparency>0.88</transparency>
         <cast_shadows>false</cast_shadows>
         <material>
           <ambient>0.02 0.18 0.5 1</ambient>

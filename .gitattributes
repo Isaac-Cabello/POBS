@@ -7,5 +7,7 @@
 *.yaml   text eol=lf
 *.yml    text eol=lf
 *.sh     text eol=lf
+/scripts/pobs text eol=lf
+/ros2_ws/scripts/pobs text eol=lf
 Dockerfile text eol=lf
 *.md     text eol=lf
