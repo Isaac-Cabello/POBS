@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <sdf version="1.10">
-  <world name="lake">
+  <world name="lake_balance_test">
     <gravity>0 0 -9.81</gravity>
     <physics name="physics" type="ignored">
       <max_step_size>0.001</max_step_size>
@@ -57,9 +57,13 @@
       <pose>0 0 0 0 0 0</pose>
     </include>
     <include>
-      <uri>model://pobs</uri>
-      <name>pobs</name>
+      <uri>model://pobs_balance_test</uri>
+      <name>pobs_balance_test</name>
       <pose>-12 -8 -3 0 0 0</pose>
     </include>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu" />
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
   </world>
 </sdf>

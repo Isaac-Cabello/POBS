@@ -5,7 +5,9 @@ ros2_ws/log/
 /build/
 /install/
 /log/
-
+build/
+install/
+log/
 # Python
 __pycache__/
 *.py[cod]
@@ -15,6 +17,7 @@ __pycache__/
 .gz/
 
 # Editors and operating system files
+.pio/
 .vscode/
 .idea/
 *.swp

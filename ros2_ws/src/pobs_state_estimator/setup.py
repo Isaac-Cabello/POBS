@@ -1,3 +1,5 @@
+import os
+from glob import glob
 from setuptools import find_packages, setup
 
 package_name = 'pobs_state_estimator'
@@ -10,13 +12,17 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (os.path.join('share',package_name,'launch'),
+        glob('launch/*.launch.py'),),
+        (os.path.join('share',package_name,'config'),
+        glob('config/*.yaml'),),
     ],
     package_data={'': ['py.typed']},
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='Nishtha2478',
     maintainer_email='nishthahp08@gmail.com',
-    description='TODO: Package description',
+    description='POBS ROS 2 state estimation and IMU integration',
     license='TODO: License declaration',
     extras_require={
         'test': [
