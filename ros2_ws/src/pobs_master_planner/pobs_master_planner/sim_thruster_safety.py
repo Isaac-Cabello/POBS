@@ -131,7 +131,7 @@ class SimThrusterSafety(Node):
             or abs(self.roll) > 10.0
         ):
             state = 'UNSAFE_TILT'
-        elif math.hypot(*self.xy) > 2.0:
+        elif math.hypot(*self.xy) > 3.0:
             state = 'OUTSIDE_TEST_AREA'
         elif (
             self.planner_state != 'NAVIGATING'

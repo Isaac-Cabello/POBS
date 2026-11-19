@@ -13,6 +13,7 @@ setup(
         ('share/' + package_name + '/launch', [
             'launch/master_planner.launch.py',
             'launch/planner_gazebo_dry_run.launch.py',
+            'launch/planner_gazebo_powered.launch.py',
         ]),
     ],
     install_requires=['setuptools'],

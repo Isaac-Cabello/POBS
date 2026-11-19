@@ -5,7 +5,7 @@ from pathlib import Path
 import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
-from geometry_msgs.msg import PointStamped, WrenchStamped
+from geometry_msgs.msg import PointStamped, WrenchStamped, TwistStamped
 from nav_msgs.msg import Odometry
 
 from pobs_stabilizer.model_properties import load_model_properties
@@ -134,6 +134,8 @@ class Stabilizer(Node):
         self.desired_pitch = 0.0
         self.desired_yaw = None  # Hold the initial heading once orientation arrives.
         self.desired_x_velocity = 0.0  # Hold zero forward/backward speed.
+        self.nav_command_t = None
+        self.nav_timeout = 0.5
 
         self.desired_depth = float(
             self.get_parameter("desired_depth").value
@@ -211,6 +213,14 @@ class Stabilizer(Node):
             10
         )
 
+        # subscrive to setpoint
+        self.nav_sub = self.create_subscription(
+            TwistStamped,
+            "/navigation/setpoint",
+            self.nav_callback,
+            10
+        )
+
         # Publish desired wrench to thruster allocator.
         self.publisher = self.create_publisher(
             WrenchStamped,
@@ -261,6 +271,17 @@ class Stabilizer(Node):
         if math.isfinite(msg.point.z):
             self.depth = msg.point.z
             self.last_depth_time = self.sim_seconds()
+
+    def nav_callback(self,msg):
+        if msg.header.frame_id != "odom":
+            return
+        yaw = msg.twist.angular.z
+        velocity = msg.twist.linear.x
+        if not all(math.isfinite(v) for v in (yaw,velocity)):
+            return
+        self.desired_yaw = self.wrap_angle(yaw)
+        self.desired_x_velocity = max(-0.2, min(0.2,velocity))
+        self.nav_command_t = self.sim_seconds()
 
     def sim_seconds(self):
         """ROS clock; with use_sim_time=True this is /clock time."""
@@ -531,6 +552,16 @@ class Stabilizer(Node):
 
         # ROS clock uses simulation time.
         now = self.sim_seconds()
+
+        #expire stale nav commands
+        if self.nav_command_t is not None:
+            if(now - self.nav_command_t > self.nav_timeout or
+                now <self.nav_command_t):
+                self.desired_x_velocity =0.0
+                self.desired_yaw = None
+                self.nav_command_t = None
+                self.old_x_error = None
+                self.old_yaw_error = None
 
         # Depth is mandatory.
         # Orientation from the estimator is optional.
